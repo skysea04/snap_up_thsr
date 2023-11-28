@@ -5,7 +5,7 @@ __!!此專案為純研究用途，請勿用於不當交易行為!!__
 這是一份自動化高鐵購票系統的後端程式碼
 
 使用技術：
-- Django Framework
+- Django
 - beautifulsoup4
 - Celery
 
