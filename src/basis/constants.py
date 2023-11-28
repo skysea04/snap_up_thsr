@@ -1,0 +1,35 @@
+class WeekDay:
+    Monday = 0
+    Tuesday = 1
+    Wednesday = 2
+    Thursday = 3
+    Friday = 4
+    Saturday = 5
+    Sunday = 6
+
+
+class Time:
+    ONE_SECOND = 1
+    TRHEE_SECONDS = ONE_SECOND * 3
+    FIVE_SECONDS = ONE_SECOND * 5
+    TEN_SECONDS = ONE_SECOND * 10
+    FIFTEEN_SECONDS = ONE_SECOND * 15
+    THIRTY_SECONDS = ONE_SECOND * 30
+
+    ONE_MINUTE = ONE_SECOND * 60
+    THREE_MINUTE = ONE_MINUTE * 3
+    FIVE_MINUTES = ONE_MINUTE * 5
+    TEN_MINUTES = ONE_MINUTE * 10
+    FIFTEEN_MINUTES = ONE_MINUTE * 15
+    THIRTY_MINUTES = ONE_MINUTE * 30
+
+    ONE_HOUR = ONE_MINUTE * 60
+    TWO_HOURS = ONE_HOUR * 2
+    THREE_HOURS = ONE_HOUR * 3
+    TWELVE_HOURS = ONE_HOUR * 12
+
+    ONE_DAY = ONE_HOUR * 24
+    TWO_DAYS = ONE_DAY * 2
+
+    ONE_WEEK = ONE_DAY * 7
+    TWO_WEEKS = ONE_WEEK * 2

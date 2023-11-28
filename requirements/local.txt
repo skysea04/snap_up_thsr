@@ -1,0 +1,12 @@
+django==4.2
+pydantic
+
+pytz
+psycopg
+redis
+phonenumbers
+requests
+beautifulsoup4
+Celery
+django_celery_results
+django-celery-beat

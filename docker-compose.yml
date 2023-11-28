@@ -1,0 +1,29 @@
+services:
+  cache:
+    image: redis:alpine
+    ports:
+      - "8684:6379"
+  db:
+    image: postgres:latest
+    restart: always
+    ports:
+      - "8685:5432"
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+      PGDATA: /var/lib/postgresql/data
+
+  app:
+    build: .
+    links:
+      - "db:db"
+      - "cache:cache"
+    volumes:
+      - ./src:/src
+      - ./requirements:/requirements
+    ports:
+      - "8686:8000"
+    command: bash -c "pip freeze > /requirements/live.txt && tail -f /etc/hosts"
+    environment:
+      DEPLOY: dev
