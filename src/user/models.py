@@ -1,5 +1,4 @@
 from basis.db import BasisModel
-# from booking.constants.bookings import BookingMethod, SeatPrefer, TypeOfTrip
 from django.db import models
 from django.db.models import UniqueConstraint
 

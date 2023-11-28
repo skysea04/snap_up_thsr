@@ -1,7 +1,6 @@
 from datetime import time
 from typing import List, Tuple
 
-import dateutil
 from django.db import models
 
 AVAILABLE_DAYS_AFTER_BOOKING = 28

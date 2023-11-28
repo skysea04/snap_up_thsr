@@ -15,14 +15,13 @@ from . import error_codes, exceptions, messages, utils
 from .constants.bookings import MAX_TICKET_NUM, AvailableTime, PassengerNum, Station
 from .models import BookingRequest
 from .param_models import BookingRequestParam
-from .tasks import add, booking
+from .tasks import booking
 
-
-@require_GET
-def test_task(request: HttpRequest, **kwargs):
-    after_3_sec = tz.now() + td(seconds=3)
-    add.apply_async((1, 2), eta=after_3_sec)
-    return {}
+# @require_GET
+# def test_task(request: HttpRequest, **kwargs):
+#     after_3_sec = tz.now() + td(seconds=3)
+#     add.apply_async((1, 2), eta=after_3_sec)
+#     return {}
 
 
 @require_GET
@@ -80,5 +79,5 @@ def create_booking_request(request: HttpRequest, user: User, data: BookingReques
     )
 
     return {
-        'id': booking_request
+        'id': booking_request.pk
     }

@@ -1,6 +1,6 @@
-from celery import Task
 import time
 
+from celery import Task
 from django.db import transaction
 from src.celery import app as celery_app
 from user.models import User
@@ -74,11 +74,3 @@ def booking(booking_request: BookingRequest):
         thsr_ticket.save()
         booking_request.thsr_ticket_id = thsr_ticket.pk
         booking_request.save()
-
-
-@celery_app.task()
-def add(x, y):
-    return x + y
-
-
-booking: Task
