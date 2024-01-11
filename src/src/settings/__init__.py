@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_celery_results',
     'src',
     'user',
     'booking',
@@ -160,10 +159,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DEPLOY_ENV = os.environ.get('DEPLOY')
 local_config = import_module(f'src.settings.{DEPLOY_ENV}')
 locals().update(local_config.__dict__)
-
-# Celery settings
-CELERY_BROKER_URL = 'redis://cache:6379'
-# CELERY_RESULT_BACKEND = 'redis://cache:6379'
-CELERY_RESULT_BACKEND = 'django-db'
-# CELERY_CACHE_BACKEND = 'default'
-CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True

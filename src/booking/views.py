@@ -15,7 +15,7 @@ from . import error_codes, exceptions, messages, utils
 from .constants.bookings import MAX_TICKET_NUM, AvailableTime, PassengerNum, Station
 from .models import BookingRequest
 from .param_models import BookingRequestParam
-from .tasks import booking
+from .tasks import booking_task
 
 # @require_GET
 # def test_task(request: HttpRequest, **kwargs):
@@ -64,19 +64,7 @@ def create_booking_request(request: HttpRequest, user: User, data: BookingReques
     depart_date = dt.strptime(data.depart_date, '%Y-%m-%d').replace(tzinfo=CURRENT_TZ)
     last_can_booking_date = utils.last_can_booking_date(depart_date)
 
-    booking.apply_async(
-        booking_request,
-        eta=last_can_booking_date,
-        expires=depart_date - td(days=1),
-        retry=True,
-        retry_policy={
-            'retry_errors': (exceptions.BookingException, ),
-            'max_retries': None,
-            'interval_start': Time.TEN_SECONDS,
-            'interval_step': Time.FIVE_SECONDS,
-            'interval_max': Time.ONE_MINUTE,
-        },
-    )
+    # booking_task(booking_request)
 
     return {
         'id': booking_request.pk

@@ -1,13 +1,20 @@
+import os
+import sys
 from datetime import datetime, timedelta as td
 
+import ddddocr
 from basis.constants import WeekDay
 
 from .constants.bookings import AVAILABLE_DAYS_AFTER_BOOKING
 
+# Initial ocr, initial process will print advertising text, redirect the text to null
+sys.stdout = open(os.devnull, 'w')
+img_ocr = ddddocr.DdddOcr()
+sys.stdout = sys.__stdout__
+
 
 def recognize_img(img: bytes) -> str:
-    # You need to find your own way~~~
-    return '1234'
+    return img_ocr.classification(img)
 
 
 def last_can_booking_date(depart_date: datetime):

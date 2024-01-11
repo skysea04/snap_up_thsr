@@ -10,6 +10,7 @@ class User(BasisModel):
     invite_code = models.CharField(max_length=8)
     personal_id = models.CharField(max_length=10, blank=True)
     phone = models.CharField(max_length=10, blank=True)
+    use_tgo_account = models.BooleanField(default=False, help_text='TGO account is your personal ID')
 
     class Meta:
         constraints = [

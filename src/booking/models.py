@@ -1,18 +1,50 @@
 from dataclasses import dataclass
 from datetime import datetime as dt, timedelta as td
-from typing import List
 
 from basis.db import BasisModel
 from booking.constants.bookings import (
     AVAILABLE_TIMES, AvailableTime, BookingMethod, PassengerNum, SeatPrefer, Station, TypeOfTrip
 )
+from bs4.element import Tag
 from django.db import models
 from pydantic import BaseModel, Field, validator
+from requests import Session
 
 from .exceptions import BookingException
 
 
+class THSRTicket(BasisModel):
+    ticket_id = models.CharField(max_length=10, blank=True)
+    total_price = models.CharField(max_length=10, blank=True)
+    payment_deadline = models.CharField(max_length=10, blank=True)
+    train_id = models.CharField(max_length=10, blank=True)
+    seat_num = models.CharField(max_length=50, blank=True)
+    date = models.CharField(max_length=10, blank=True)
+    depart_time = models.CharField(max_length=255, blank=True)
+    arrival_time = models.CharField(max_length=255, blank=True)
+    depart_station = models.PositiveSmallIntegerField(choices=Station.choices)
+    arrival_station = models.PositiveSmallIntegerField(choices=Station.choices)
+
+
 class BookingRequest(BasisModel):
+    class Status(models.IntegerChoices):
+        NOT_YET = 0
+        PENDING = 1
+        PROCESSING = 2
+        COMPLETED = 3
+        EXPIRED = -1
+        DELETED = -2
+
+    status = models.PositiveSmallIntegerField(choices=Status.choices, default=Status.NOT_YET)
+    thsr_ticket = models.ForeignKey(
+        THSRTicket,
+        db_constraint=False,
+        on_delete=models.DO_NOTHING,
+        null=True,
+        blank=True,
+        verbose_name='THSR Ticket ID'
+    )
+    train_id = models.CharField(max_length=10, blank=True)
     user_email = models.EmailField()
     depart_station = models.PositiveSmallIntegerField(choices=Station.choices, default=Station.Nangang)
     dest_station = models.PositiveSmallIntegerField(choices=Station.choices, default=Station.Zuouing)
@@ -31,70 +63,63 @@ class BookingRequest(BasisModel):
     latest_arrival_time = models.CharField(
         max_length=10, blank=True, choices=AvailableTime.choices, default=AvailableTime.TwentythreeFiftynine
     )
-    train_id = models.CharField(max_length=10, blank=True)
-    deleted_at = models.DateTimeField(blank=True)
-    thsr_ticket_id = models.PositiveBigIntegerField(null=True)
+    passenger_ids = models.JSONField(default=list)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    @classmethod
+    def get_all_by_status(cls, status: int) -> list['BookingRequest']:
+        return list(
+            cls.objects.filter(status=status).order_by('-depart_date')
+        )
 
     class Meta:
         indexes = [
             models.Index(fields=['user_email']),
+            models.Index(fields=['status', '-depart_date']),
         ]
 
 
-class BookingQueue(BasisModel):
-    booking_request_id = models.PositiveBigIntegerField()
-    booking_date = models.DateField()
-    retry_times = models.PositiveSmallIntegerField()
-    max_retry_times = models.PositiveSmallIntegerField()
+# class BookingQueue(BasisModel):
+#     booking_request_id = models.PositiveBigIntegerField()
+#     booking_date = models.DateField()
+#     retry_times = models.PositiveSmallIntegerField()
+#     max_retry_times = models.PositiveSmallIntegerField()
 
 
 # One booking request flow will save one booking log
-class BookingLog(BasisModel):
-    class Status(models.IntegerChoices):
-        FAIL = -1
-        INIT = 0
-        SUCCESS = 1
+# class BookingLog(BasisModel):
+#     class Status(models.IntegerChoices):
+#         FAIL = -1
+#         INIT = 0
+#         SUCCESS = 1
 
-    booking_request_id = models.PositiveBigIntegerField()
-    status = models.SmallIntegerField()
-    err_msg = models.TextField()
-    ticket_id = models.CharField(max_length=10)
+#     booking_request_id = models.PositiveBigIntegerField()
+#     status = models.SmallIntegerField()
+#     err_msg = models.TextField()
+#     ticket_id = models.CharField(max_length=10)
 
-    class Meta:
-        indexes = [
-            models.Index(fields=['booking_request_id']),
-        ]
-
-
-class BookingResult(BasisModel):
-    class Status(models.IntegerChoices):
-        SUCCESS = 1
-        FAIL = -1
-
-    user_email = models.EmailField()
-    booking_request_id = models.PositiveBigIntegerField()
-    status = models.PositiveSmallIntegerField(choices=Status.choices)
-    thsr_ticket_id = models.PositiveBigIntegerField()
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['user_email']),
-            models.Index(fields=['booking_request_id']),
-            models.Index(fields=['thsr_ticket_id']),
-        ]
+#     class Meta:
+#         indexes = [
+#             models.Index(fields=['booking_request_id']),
+#         ]
 
 
-class THSRTicket(BasisModel):
-    ticket_id = models.CharField(max_length=10, blank=True)
-    total_price = models.CharField(max_length=10, blank=True)
-    payment_deadline = models.CharField(max_length=10, blank=True)
-    train_id = models.CharField(max_length=10, blank=True)
-    seat_num = models.CharField(max_length=50, blank=True)
-    date = models.CharField(max_length=10, blank=True)
-    depart_time = models.DateTimeField(blank=True)
-    arrival_time = models.DateTimeField(blank=True)
-    depart_station = models.PositiveSmallIntegerField(choices=Station.choices)
-    arrival_station = models.PositiveSmallIntegerField(choices=Station.choices)
+# class BookingResult(BasisModel):
+#     class Status(models.IntegerChoices):
+#         SUCCESS = 1
+#         FAIL = -1
+
+#     user_email = models.EmailField()
+#     booking_request_id = models.PositiveBigIntegerField()
+#     status = models.PositiveSmallIntegerField(choices=Status.choices)
+#     thsr_ticket_id = models.PositiveBigIntegerField()
+
+#     class Meta:
+#         indexes = [
+#             models.Index(fields=['user_email']),
+#             models.Index(fields=['booking_request_id']),
+#             models.Index(fields=['thsr_ticket_id']),
+#         ]
 
 
 class BookingCondition(BaseModel):
@@ -131,7 +156,7 @@ class BookingForm(BaseModel):
 
     depart_date: str = Field(..., serialization_alias='toTimeInputField')
     back_date: str = Field(None, serialization_alias='backTimeInputField')
-    depart_time: str = Field(..., serialization_alias='toTimeTable')
+    depart_time: str = Field(None, serialization_alias='toTimeTable')
     depart_train_id: int = Field(None, serialization_alias='toTrainIDInputField')
     back_time: str = Field(None, serialization_alias='backTimeTable')
     back_train_id: int = Field(None, serialization_alias='backTrainIDInputField')
@@ -152,6 +177,30 @@ class BookingForm(BaseModel):
             raise ValueError(f'Invalid type of trip: {value}')
         return value
 
+    @classmethod
+    def generate_form(cls, booking_request: BookingRequest, booking_method_radio: str, security_code: str) -> 'BookingForm':
+        form = cls(
+            type_of_trip=booking_request.type_of_trip,
+            seat_prefer=booking_request.seat_prefer,
+            booking_method=booking_method_radio,
+            depart_station=booking_request.depart_station,
+            dest_station=booking_request.dest_station,
+            depart_date=booking_request.depart_date.strftime('%Y/%m/%d'),
+            adult_num=f'{booking_request.adult_num}F',
+            child_num=f'{booking_request.child_num}H',
+            disabled_num=f'{booking_request.disabled_num}W',
+            elder_num=f'{booking_request.elder_num}E',
+            college_num=f'{booking_request.college_num}P',
+            security_code=security_code,
+        )
+
+        if booking_request.booking_method == BookingMethod.TIME:
+            form.depart_time = booking_request.earliest_depart_time
+        elif booking_request.booking_method == BookingMethod.TRAIN_NO:
+            form.depart_train_id = booking_request.train_id
+
+        return form
+
 
 class TrainForm(BaseModel):
     form_mark: str = Field('', serialization_alias='BookingS2Form:hf:0')
@@ -159,17 +208,22 @@ class TrainForm(BaseModel):
     train_value: str = Field(..., serialization_alias='TrainQueryDataViewPanel:TrainGroup')
 
 
+class Passenger(BaseModel):
+    discount: str
+    id: str
+
+
 class TicketForm(BaseModel):
     personal_id: str = Field(..., serialization_alias='dummyId')
     phone: str = Field(..., serialization_alias='dummyPhone')
     email: str = Field(..., serialization_alias='email')
     member_radio: str = Field(
-        ...,
+        '',
         serialization_alias='TicketMemberSystemInputPanel:TakerMemberSystemDataView:memberSystemRadioGroup',
         description='非高鐵會員, 企業會員 / 高鐵會員 / 企業會員統編',
     )
     member_account: str = Field(
-        ...,
+        '',
         serialization_alias='TicketMemberSystemInputPanel:TakerMemberSystemDataView:memberSystemRadioGroup:memberShipNumber',
         description='高鐵會員帳號 (選擇登入高鐵會員時使用)'
     )
@@ -181,16 +235,36 @@ class TicketForm(BaseModel):
     back_home: str = Field('', serialization_alias='backHome')
     tgo_error: int = Field(1, serialization_alias='TgoError')
 
-    passenger_last_name: str = Field(
-        '', serialization_alias='TicketPassengerInfoInputPanel:passengerDataView:0:passengerDataView2:passengerDataLastName')
-    passenger_first_name: str = Field(
-        '', serialization_alias='TicketPassengerInfoInputPanel:passengerDataView:0:passengerDataView2:passengerDataFirstName')
-    passenger_discount: str = Field(
-        '全票/早鳥8折', serialization_alias='TicketPassengerInfoInputPanel:passengerDataView:0:passengerDataView2:passengerDataTypeName')
-    passenger_choice: int = Field(
-        0, serialization_alias='TicketPassengerInfoInputPanel:passengerDataView:0:passengerDataView2:passengerDataInputChoice')
-    passenger_id: str = Field(
-        'A126189598', serialization_alias='TicketPassengerInfoInputPanel:passengerDataView:0:passengerDataView2:passengerDataIdNumber')
+    @classmethod
+    def generate_passenger_fields(cls, passenger: Passenger, idx: int) -> dict:
+        return {
+            f'passenger_last_name_{idx}': (str, Field(
+                '', serialization_alias=f'TicketPassengerInfoInputPanel:passengerDataView:{idx}:passengerDataView2:passengerDataLastName'
+            )),
+            f'passenger_first_name_{idx}': (str, Field(
+                '', serialization_alias=f'TicketPassengerInfoInputPanel:passengerDataView:{idx}:passengerDataView2:passengerDataFirstName'
+            )),
+            f'passenger_discount_{idx}': (str, Field(
+                passenger.discount, serialization_alias=f'TicketPassengerInfoInputPanel:passengerDataView:{idx}:passengerDataView2:passengerDataTypeName'
+            )),
+            f'passenger_choice_{idx}': (int, Field(
+                0, serialization_alias=f'TicketPassengerInfoInputPanel:passengerDataView:{idx}:passengerDataView2:passengerDataInputChoice'
+            )),
+            f'passenger_id_{idx}': (str, Field(
+                passenger.id, serialization_alias=f'TicketPassengerInfoInputPanel:passengerDataView:{idx}:passengerDataView2:passengerDataIdNumber'
+            )),
+        }
+
+    @classmethod
+    def generate_discount_passenger_fields(cls, passengers: list[Passenger]) -> dict:
+        passenger_fields = {}
+        for idx, passenger in enumerate(passengers):
+            passenger_fields.update(cls.generate_passenger_fields(passenger, idx))
+
+        # for key, value in passenger_fields.items():
+        #     setattr(self, key, value)
+
+        return passenger_fields
 
 
 @dataclass
@@ -200,9 +274,10 @@ class Train:
     departure_time: dt
     arrival_time: dt
     travel_time: td
-    discounts: List[int]
+    discounts: list[int]
 
 
 class TrainSelector:
-    def get_earliest(train_lst: List[Train]):
+    @staticmethod
+    def get_earliest(train_lst: list[Train]) -> Train:
         return train_lst[0]

@@ -1,8 +1,20 @@
+from enum import Enum
+
+
 # Page 1 查詢車次
 class BookingPage:
     SECURITY_IMAGE = {'id': 'BookingS1Form_homeCaptcha_passCode'}  # 驗證碼圖片
     SEAT_PREFER_RADIO = {'id': 'BookingS1Form_seatCon_seatRadioGroup'}  # 無偏好 靠窗 靠走道
     TYPE_OF_TRIP = {'id': 'BookingS1Form_tripCon_typesoftrip'}  # 單程、來回
+    BOOKING_METHOD_TIME_RADIO = {
+        'name': 'input',
+        'attrs': {'data-target': 'search-by-time'}
+    }
+    BOOKING_METHOD_TRAIN_NO_RADIO = {
+        'name': 'input',
+        'attrs': {'data-target': 'search-by-trainNo'}
+    }
+    NEXT_PAGE_PATH = {'id': 'BookingS1Form'}
 
 
 # Page 2 選擇車次
@@ -17,6 +29,7 @@ class SelectTrainPage:
     DEPARTURE_DATE = 'querydeparturedate'
     TRAIN_CODE = 'querycode'
     TRAVEL_TIME = 'queryestimatedtime'
+    NEXT_PAGE_PATH = {'id': 'BookingS2Form'}
 
 
 # Page 3 取票資訊
@@ -29,6 +42,8 @@ class ConfirmTicketPage:
         'name': 'input',
         'attrs': {'id': 'memberSystemRadio3'},
     }
+    DISCOUNT = {'class': 'early-bird'}
+    NEXT_PAGE_PATH = {'id': 'BookingS3FormSP'}
     FORM_VALUE = 'value'
 
 
@@ -69,6 +84,7 @@ class CompleteBookingPage:
 class ErrorPage:
     ERROR_FEEDBACK = {'class': 'feedbackPanelERROR'}
     ERROR_MESSAGE = {'text': '抱歉，無法繼續提供您訂票的服務，可能發生原因及解決方法如下：'}
+    ERROR_CONTENT = {'class': 'error-content'}
 
     ERROR_SECURITY_CODE = '檢測碼輸入錯誤，請確認後重新輸入，謝謝！'
     ERROR_NO_TRAIN = '去程查無可售車次或選購的車票已售完，請重新輸入訂票條件。'

@@ -1,70 +1,72 @@
-import time
-
-from celery import Task
 from django.db import transaction
-from src.celery import app as celery_app
+from pydantic import create_model
 from user.models import User
 
-from .constants.page_htmls import ErrorPage
+from .constants.bookings import BookingMethod
+from .constants.page_htmls import BookingPage, ConfirmTicketPage, ErrorPage, SelectTrainPage
 from .exceptions import BookingException
-from .models import BookingForm, BookingRequest, TicketForm, TrainForm, TrainSelector
-from .services import PageParser, THSRSession, check_resp_ok
-from .utils import recognize_img
+from .models import BookingForm, BookingRequest, Passenger, TicketForm, TrainForm, TrainSelector
+from .services import BookingProcessor, PageParser, THSRSession, check_resp_ok
 
 
-@celery_app.task()
-def booking(booking_request: BookingRequest):
+def booking_task(booking_request: BookingRequest):
     sess = THSRSession()
     booking_page = sess.get_booking_page()
-    security_img_url = PageParser.get_security_img_url(booking_page)
-    security_img_bytes = sess.get_security_img(security_img_url)
-    security_code = recognize_img(security_img_bytes)
+    booking_form = BookingForm.generate_form(
+        booking_request=booking_request,
+        booking_method_radio=PageParser.get_booking_method_radio(booking_page, booking_request),
+        security_code=PageParser.get_security_code(sess, booking_page),
+    )
 
-    booking_form = BookingForm(
-        type_of_trip=booking_request.type_of_trip,
-        seat_prefer=booking_request.seat_prefer,
-        booking_method=booking_request.booking_method,
-        depart_station=booking_request.depart_station,
-        dest_station=booking_request.dest_station,
-        depart_date=booking_request.depart_date.strftime('%Y/%m/%d'),
-        depart_time=booking_request.earliest_depart_time,
-        adult_num=f'{booking_request.adult_num}F',
-        child_num=f'{booking_request.child_num}H',
-        disabled_num=f'{booking_request.disabled_num}W',
-        elder_num=f'{booking_request.elder_num}E',
-        college_num=f'{booking_request.college_num}P',
-        security_code=security_code,
-    ).model_dump(by_alias=True)
+    if booking_request.booking_method == BookingMethod.TIME:
+        select_train_page = BookingProcessor.submit_booking_condition(sess, booking_page, booking_form)
+        train_lst = PageParser.get_train_lst(select_train_page)
+        train = TrainSelector.get_earliest(train_lst)
+        train_form = TrainForm(train_value=train.value)
 
-    select_train_page = sess.submit_booking_condition(booking_form)
-    ok, err_msg = check_resp_ok(select_train_page)
-    while not ok:
-        if err_msg == ErrorPage.ERROR_SECURITY_CODE:
-            time.sleep(0.2)
-            ok, err_msg = check_resp_ok(select_train_page)
-        else:
-            raise BookingException(err_msg)
+        confirm_ticket_page = sess.select_train(
+            PageParser.get_next_page_path(SelectTrainPage, select_train_page),
+            train_form.model_dump(by_alias=True),
+        )
 
-    train_lst = PageParser.get_train_lst(select_train_page)
-    train = TrainSelector.get_earliest(train_lst)
-    train_form = TrainForm(train_value=train.value).model_dump(by_alias=True)
+    else:  # booking_request.booking_method == BookingMethod.TRAIN_NO:
+        confirm_ticket_page = BookingProcessor.submit_booking_condition(sess, booking_page, booking_form)
 
-    confirm_ticket_page = sess.select_train(train_form)
     ok, err_msg = check_resp_ok(confirm_ticket_page)
     if not ok:
         raise BookingException(err_msg)
 
-    member_radio = PageParser.get_not_member_radio(confirm_ticket_page)
-
     user = User.get_by_email(booking_request.user_email)
-    ticket_form = TicketForm(
+    passenger_fields = {}
+    if discount := PageParser.get_discount(confirm_ticket_page):
+        passenger_lst = [
+            Passenger(
+                discount=discount,
+                id=p_id,
+            ) for p_id in booking_request.passenger_ids
+        ]
+        passenger_fields = TicketForm.generate_discount_passenger_fields(passenger_lst)
+
+    DiscountTicketForm = create_model(
+        'DiscountTicketForm',
+        **passenger_fields,
+        __base__=TicketForm,
+    )
+    ticket_form = DiscountTicketForm(
         personal_id=user.personal_id,
         phone=user.phone,
         email=user.email,
-        member_radio=member_radio,
-    ).model_dump(by_alias=True)
+    )
+    if user.use_tgo_account:
+        ticket_form.member_radio = PageParser.get_tgo_member_radio(confirm_ticket_page)
+        ticket_form.member_account = user.personal_id
+    else:
+        ticket_form = PageParser.get_not_member_radio(confirm_ticket_page)
 
-    complete_booking_page = sess.confirm_ticket(ticket_form)
+    complete_booking_page = sess.confirm_ticket(
+        PageParser.get_next_page_path(ConfirmTicketPage, confirm_ticket_page),
+        ticket_form.model_dump(by_alias=True),
+    )
     ok, err_msg = check_resp_ok(complete_booking_page)
     if not ok:
         raise BookingException(err_msg)
@@ -72,5 +74,6 @@ def booking(booking_request: BookingRequest):
     thsr_ticket = PageParser.get_booked_ticket_info(complete_booking_page)
     with transaction.atomic():
         thsr_ticket.save()
-        booking_request.thsr_ticket_id = thsr_ticket.pk
+        booking_request.thsr_ticket = thsr_ticket
+        booking_request.status = BookingRequest.Status.COMPLETED
         booking_request.save()

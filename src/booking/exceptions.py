@@ -1,2 +1,2 @@
-class BookingException(BaseException):
+class BookingException(Exception):
     pass

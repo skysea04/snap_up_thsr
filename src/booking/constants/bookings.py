@@ -110,11 +110,11 @@ class PassengerNum(models.IntegerChoices):
 
 
 DISCOUNT_MAP = {
-    '早鳥9折': 90,
+    '早鳥9折': (90, '早鳥9折'),
     # '學生88折': 88,
-    '早鳥8折': 80,
+    '早鳥8折': (80, '早鳥8折'),
     # '學生75折': 75,
-    '早鳥65折': 65,
+    '早鳥65折': (65, '早鳥65折'),
     # '學生5折': 50,
 }
 
@@ -142,8 +142,8 @@ class TypeOfTrip(models.IntegerChoices):
 
 
 class BookingMethod(models.IntegerChoices):
-    TIME = (0, 'radio31')
-    TRAIN_NO = (1, 'radio33')
+    TIME = 0
+    TRAIN_NO = 1
 
 
 class SeatPrefer(models.IntegerChoices):
