@@ -94,6 +94,13 @@ class AvailableTime(models.TextChoices):
     TwentythreeThirty = '1130P', '23:30'
     TwentythreeFiftynine = '1201A', '23:59'
 
+    @classmethod
+    def get_label_name(cls, value) -> str:
+        for val, label in cls.choices:
+            if val == value:
+                return label
+        return ''
+
 
 class PassengerNum(models.IntegerChoices):
     Zero = 0, '0'

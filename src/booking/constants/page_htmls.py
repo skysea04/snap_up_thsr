@@ -1,6 +1,3 @@
-from enum import Enum
-
-
 # Page 1 查詢車次
 class BookingPage:
     SECURITY_IMAGE = {'id': 'BookingS1Form_homeCaptcha_passCode'}  # 驗證碼圖片

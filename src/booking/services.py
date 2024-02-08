@@ -2,20 +2,21 @@ import time
 from datetime import datetime as dt, timedelta as td
 from typing import Dict, List, Optional, Tuple, Union
 
+import requests
+from booking.constants.bookings import AvailableTime
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from requests import Session
 
 from . import exceptions, utils
 from .constants import urls
-from .constants.bookings import DISCOUNT_MAP, BookingMethod, Station
+from .constants.bookings import AVAILABLE_DAYS_AFTER_BOOKING, DISCOUNT_MAP, BookingMethod, Station
 from .constants.page_htmls import (
     BookingPage, CompleteBookingPage, ConfirmTicketPage, ErrorPage, SelectTrainPage
 )
 from .models import BookingForm, BookingRequest, THSRTicket, Train
 
 
-class THSRSession(Session):
+class THSRSession(requests.Session):
     def get_booking_page(self) -> Tag:
         res = self.get(urls.BOOKING_PAGE, headers=urls.HEADERS, allow_redirects=True)
         return BeautifulSoup(res.content, features='html.parser')
@@ -78,21 +79,23 @@ class PageParser:
         return booking_page.find(**page_type.NEXT_PAGE_PATH)['action']
 
     @staticmethod
-    def get_train_lst(select_train_page: Tag) -> List[Train]:
+    def get_train_lst(booking_request: BookingRequest, select_train_page: Tag) -> List[Train]:
         train_lst = []
         train_elem_list: List[Tag] = select_train_page.find_all('label', **SelectTrainPage.TRAIN_LIST)
 
         for train_elem in train_elem_list:
+            str_arrival_time = train_elem.find('input').get(SelectTrainPage.ARRIVAL_TIME)
+            arrival_time = dt.strptime(str_arrival_time, '%H:%M').time()
+            if str_arrival_time > AvailableTime.get_label_name(booking_request.latest_arrival_time):
+                break
+
+            str_departure_time = train_elem.find('input').get(SelectTrainPage.DEPARTURE_TIME)
+            departure_time = dt.strptime(str_departure_time, '%H:%M').time()
             train_code = train_elem.find('input').get(SelectTrainPage.TRAIN_CODE)
             form_value = train_elem.find('input').get(SelectTrainPage.FORM_VALUE)
             dt_travel_time = dt.strptime(train_elem.find('input').get(SelectTrainPage.TRAVEL_TIME), '%H:%M')
-            str_departure_date = train_elem.find('input').get(SelectTrainPage.DEPARTURE_DATE)
-            str_departure_time = train_elem.find('input').get(SelectTrainPage.DEPARTURE_TIME)
-            str_arrival_time = train_elem.find('input').get(SelectTrainPage.ARRIVAL_TIME)
 
             travel_time = td(hours=dt_travel_time.hour, minutes=dt_travel_time.minute)
-            departure_time = dt.strptime(f'2023/{str_departure_date} {str_departure_time}', '%Y/%m/%d %H:%M')
-            arrival_time = dt.strptime(f'2023/{str_departure_date} {str_arrival_time}', '%Y/%m/%d %H:%M')
 
             discount_elems: List[Tag] = train_elem.find(**SelectTrainPage.DISCOUNT_LIST).find_all('span')
             discounts = [DISCOUNT_MAP[d.text] for d in discount_elems]
