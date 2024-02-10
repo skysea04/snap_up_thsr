@@ -1,5 +1,6 @@
-from basis.param_models import BasisModel
 from pydantic import Field
+
+from basis.param_models import BasisModel
 
 from .constants.bookings import Station
 

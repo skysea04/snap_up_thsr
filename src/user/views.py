@@ -1,8 +1,5 @@
 from typing import Dict
 
-from basis.decorators import parse_request_body
-from basis.exceptions import AppException
-from basis.validators import validate_n_format_phone, validate_personal_id
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction
 from django.http import HttpRequest
@@ -10,6 +7,10 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 from django.views.generic import View
+
+from basis.decorators import parse_request_body
+from basis.exceptions import AppException
+from basis.validators import validate_n_format_phone, validate_personal_id
 
 from . import decorators, error_codes, messages
 from .models import InviteCode, User

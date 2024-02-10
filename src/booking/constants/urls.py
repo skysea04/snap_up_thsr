@@ -10,6 +10,7 @@ HEADERS = {
 
 BASIC = 'https://irs.thsrc.com.tw{path}'
 BOOKING_PAGE = 'https://irs.thsrc.com.tw/IMINT/?locale=tw'
+LATEST_BOOKING_DATE = 'https://www.thsrc.com.tw/RawData/EAIIRS_{today_date}.xml'
 
 # class URL:
 #     BASIC = 'https://irs.thsrc.com.tw'

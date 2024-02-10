@@ -1,12 +1,16 @@
-from django.db import transaction
 from pydantic import create_model
+
+from django.db import transaction
+
+from basis.logger import log
 from user.models import User
 
 from .constants.bookings import BookingMethod
-from .constants.page_htmls import BookingPage, ConfirmTicketPage, ErrorPage, SelectTrainPage
+from .constants.page_htmls import ConfirmTicketPage, SelectTrainPage
 from .exceptions import BookingException
 from .models import BookingForm, BookingRequest, Passenger, TicketForm, TrainForm, TrainSelector
 from .services import BookingProcessor, PageParser, THSRSession, check_resp_ok
+from .utils import get_latest_booking_date
 
 
 def booking_task(booking_request: BookingRequest):
@@ -20,7 +24,10 @@ def booking_task(booking_request: BookingRequest):
 
     if booking_request.booking_method == BookingMethod.TIME:
         select_train_page = BookingProcessor.submit_booking_condition(sess, booking_page, booking_form)
-        train_lst = PageParser.get_train_lst(select_train_page)
+        train_lst = PageParser.get_train_lst(booking_request, select_train_page)
+        if not train_lst:
+            raise BookingException('no train available')
+
         train = TrainSelector.get_earliest(train_lst)
         train_form = TrainForm(train_value=train.value)
 
@@ -36,14 +43,15 @@ def booking_task(booking_request: BookingRequest):
     if not ok:
         raise BookingException(err_msg)
 
-    user = User.get_by_email(booking_request.user_email)
+    user = User.get_by_email(booking_request.user.email)
     passenger_fields = {}
     if discount := PageParser.get_discount(confirm_ticket_page):
+        passenger_ids = booking_request.passenger_ids or [user.personal_id]
         passenger_lst = [
             Passenger(
                 discount=discount,
                 id=p_id,
-            ) for p_id in booking_request.passenger_ids
+            ) for p_id in passenger_ids
         ]
         passenger_fields = TicketForm.generate_discount_passenger_fields(passenger_lst)
 
@@ -54,7 +62,7 @@ def booking_task(booking_request: BookingRequest):
     )
     ticket_form = DiscountTicketForm(
         personal_id=user.personal_id,
-        phone=user.phone,
+        phone=user.phone or '',
         email=user.email,
     )
     if user.use_tgo_account:
@@ -76,4 +84,25 @@ def booking_task(booking_request: BookingRequest):
         thsr_ticket.save()
         booking_request.thsr_ticket = thsr_ticket
         booking_request.status = BookingRequest.Status.COMPLETED
+        booking_request.error_msg = ''
         booking_request.save()
+
+
+def update_not_yet_requests_to_pending():
+    latest_booking_date = get_latest_booking_date()
+    not_yet_requests = BookingRequest.get_all_by_status(BookingRequest.Status.NOT_YET)
+    for request in not_yet_requests:
+        if request.depart_date <= latest_booking_date:
+            request.status = BookingRequest.Status.PENDING
+            request.save()
+
+
+def book_all_pending_reqests():
+    pending_requests = BookingRequest.get_all_by_status(BookingRequest.Status.PENDING)
+    for request in pending_requests:
+        try:
+            booking_task(request)
+        except BookingException as e:
+            log.error(e)
+            request.error_msg = str(e)
+            request.save()

@@ -1,8 +1,9 @@
 import traceback
 from functools import wraps
 
-from django.http import HttpRequest, JsonResponse
 from pydantic import BaseModel, ValidationError
+
+from django.http import HttpRequest, JsonResponse
 
 from . import error_codes, messages
 from .exceptions import AppException

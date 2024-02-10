@@ -4,11 +4,10 @@ WORKDIR /src
 
 COPY ./src .
 
-ADD requirements/local.txt /tmp/
+ADD requirements /requirements
 
 RUN apt update && \
     apt install -y libpq5 procps && \
-    pip install -r /tmp/local.txt && \
-    rm -r /tmp/local.txt
+    pip install -r /requirements/live.txt
 
-WORKDIR /src
+CMD ["gunicorn", "--timeout=300", "--workers=2", "--threads=8", "--keep-alive=60", "src.wsgi:application"]

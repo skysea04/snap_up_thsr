@@ -9,15 +9,13 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'HOST': 'db',
-        'NAME': 'app',
+        'PORT': '5432',
         'USER': 'app',
         'PASSWORD': 'app',
-        'PORT': '5432',
+        'NAME': 'app',
         'OPTIONS': {
             'client_encoding': 'UTF8',
             'connect_timeout': 3600,
         }
     }
 }
-
-ALLOWED_HOSTS = ['*']

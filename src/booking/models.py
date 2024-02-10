@@ -1,15 +1,20 @@
 from dataclasses import dataclass
-from datetime import datetime as dt, timedelta as td
+from datetime import datetime as dt
+from datetime import time
+from datetime import timedelta as td
+
+from pydantic import BaseModel, Field, validator
+
+from django.db import models
 
 from basis.db import BasisModel
-from booking.constants.bookings import (
-    AVAILABLE_TIMES, AvailableTime, BookingMethod, PassengerNum, SeatPrefer, Station, TypeOfTrip
-)
-from bs4.element import Tag
-from django.db import models
-from pydantic import BaseModel, Field, validator
-from requests import Session
+from user.models import User
 
+from . import utils
+from .constants.bookings import (
+    AVAILABLE_TIMES, MAX_TICKET_NUM, AvailableTime,
+    BookingMethod, PassengerNum, SeatPrefer, Station, TypeOfTrip,
+)
 from .exceptions import BookingException
 
 
@@ -35,17 +40,21 @@ class BookingRequest(BasisModel):
         EXPIRED = -1
         DELETED = -2
 
-    status = models.PositiveSmallIntegerField(choices=Status.choices, default=Status.NOT_YET)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        db_constraint=False,
+    )
+    status = models.PositiveSmallIntegerField(choices=Status.choices, default=Status.PENDING)
     thsr_ticket = models.ForeignKey(
         THSRTicket,
-        db_constraint=False,
         on_delete=models.DO_NOTHING,
+        db_constraint=False,
         null=True,
         blank=True,
         verbose_name='THSR Ticket ID'
     )
     train_id = models.CharField(max_length=10, blank=True)
-    user_email = models.EmailField()
     depart_station = models.PositiveSmallIntegerField(choices=Station.choices, default=Station.Nangang)
     dest_station = models.PositiveSmallIntegerField(choices=Station.choices, default=Station.Zuouing)
     type_of_trip = models.PositiveSmallIntegerField(choices=TypeOfTrip.choices, default=TypeOfTrip.ONE_WAY)
@@ -56,15 +65,36 @@ class BookingRequest(BasisModel):
     disabled_num = models.PositiveSmallIntegerField(choices=PassengerNum.choices, default=PassengerNum.Zero)
     elder_num = models.PositiveSmallIntegerField(choices=PassengerNum.choices, default=PassengerNum.Zero)
     college_num = models.PositiveSmallIntegerField(choices=PassengerNum.choices, default=PassengerNum.Zero)
-    depart_date = models.DateField(blank=True)
+    depart_date = models.DateField()
     earliest_depart_time = models.CharField(
         max_length=10, blank=True, choices=AvailableTime.choices, default=AvailableTime.NotChosen
     )
     latest_arrival_time = models.CharField(
         max_length=10, blank=True, choices=AvailableTime.choices, default=AvailableTime.TwentythreeFiftynine
     )
-    passenger_ids = models.JSONField(default=list)
+    passenger_ids = models.JSONField(default=list, blank=True, null=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
+    error_msg = models.CharField(max_length=255, blank=True)
+
+    # def check_tickets_amount(self):
+    #     if sum([self.adult_num, self.child_num, self.disabled_num, self.elder_num, self.college_num]) > MAX_TICKET_NUM:
+    #         raise Exception('Tickets can not exceed %s', MAX_TICKET_NUM)
+
+    def total_ticket_amount(self) -> int:
+        return sum([self.adult_num, self.child_num, self.disabled_num, self.elder_num, self.college_num])
+
+    def check_not_yet_status(self):
+        if self.status != self.Status.NOT_YET:
+            return
+
+        latest_booking_date = utils.get_latest_booking_date()
+        if latest_booking_date >= self.depart_date:
+            self.status = self.Status.PENDING
+
+    def save(self, *args, **kwargs):
+        # self.check_tickets_amount()
+        self.check_not_yet_status()
+        super().save(*args, **kwargs)
 
     @classmethod
     def get_all_by_status(cls, status: int) -> list['BookingRequest']:
@@ -74,52 +104,8 @@ class BookingRequest(BasisModel):
 
     class Meta:
         indexes = [
-            models.Index(fields=['user_email']),
             models.Index(fields=['status', '-depart_date']),
         ]
-
-
-# class BookingQueue(BasisModel):
-#     booking_request_id = models.PositiveBigIntegerField()
-#     booking_date = models.DateField()
-#     retry_times = models.PositiveSmallIntegerField()
-#     max_retry_times = models.PositiveSmallIntegerField()
-
-
-# One booking request flow will save one booking log
-# class BookingLog(BasisModel):
-#     class Status(models.IntegerChoices):
-#         FAIL = -1
-#         INIT = 0
-#         SUCCESS = 1
-
-#     booking_request_id = models.PositiveBigIntegerField()
-#     status = models.SmallIntegerField()
-#     err_msg = models.TextField()
-#     ticket_id = models.CharField(max_length=10)
-
-#     class Meta:
-#         indexes = [
-#             models.Index(fields=['booking_request_id']),
-#         ]
-
-
-# class BookingResult(BasisModel):
-#     class Status(models.IntegerChoices):
-#         SUCCESS = 1
-#         FAIL = -1
-
-#     user_email = models.EmailField()
-#     booking_request_id = models.PositiveBigIntegerField()
-#     status = models.PositiveSmallIntegerField(choices=Status.choices)
-#     thsr_ticket_id = models.PositiveBigIntegerField()
-
-#     class Meta:
-#         indexes = [
-#             models.Index(fields=['user_email']),
-#             models.Index(fields=['booking_request_id']),
-#             models.Index(fields=['thsr_ticket_id']),
-#         ]
 
 
 class BookingCondition(BaseModel):
@@ -271,8 +257,8 @@ class TicketForm(BaseModel):
 class Train:
     code: str
     value: str
-    departure_time: dt
-    arrival_time: dt
+    departure_time: time
+    arrival_time: time
     travel_time: td
     discounts: list[int]
 
