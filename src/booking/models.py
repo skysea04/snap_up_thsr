@@ -19,6 +19,11 @@ from .exceptions import BookingException
 
 
 class THSRTicket(BasisModel):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        db_constraint=False,
+    )
     ticket_id = models.CharField(max_length=10, blank=True)
     total_price = models.CharField(max_length=10, blank=True)
     payment_deadline = models.CharField(max_length=10, blank=True)
@@ -29,6 +34,9 @@ class THSRTicket(BasisModel):
     arrival_time = models.CharField(max_length=255, blank=True)
     depart_station = models.PositiveSmallIntegerField(choices=Station.choices)
     arrival_station = models.PositiveSmallIntegerField(choices=Station.choices)
+
+    def __str__(self) -> str:
+        return self.ticket_id
 
 
 class BookingRequest(BasisModel):

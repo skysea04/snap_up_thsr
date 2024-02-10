@@ -8,3 +8,6 @@ phonenumbers
 requests
 beautifulsoup4
 ddddocr
+
+# live
+gunicorn
