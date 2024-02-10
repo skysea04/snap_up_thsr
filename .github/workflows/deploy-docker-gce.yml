@@ -1,0 +1,80 @@
+name: Deploy to Google Compute Engine
+
+on:
+  push:
+    branches:
+      - dev  # Replace with your branch
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: arcade0425
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      # if: steps.changes.outputs.matched == 'true'
+
+    # - name: Check for changes
+    #   id: changes
+    #   uses: dorny/paths-filter@v3
+    #   with:
+    #     filters: |
+    #       src:
+    #         - 'src/**'
+    #         - 'Dockerfile'
+
+    # - name: Build and push app image
+    #   run: |
+    #     docker build -t arcade0425/snap_up_thsr:latest .
+    #     docker push arcade0425/snap_up_thsr:latest
+    #   # if: steps.changes.outputs.matched == 'true'
+
+    # - name: Build and push nginx image
+    #   run: |
+    #     docker build -t arcade0425/snap_up_thsr_nginx:latest -f ./Dockerfile-nginx .
+    #     docker push arcade0425/snap_up_thsr_nginx:latest
+    #   # if: steps.changes.outputs.matched == 'true'
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Google Cloud Auth
+      uses: google-github-actions/auth@v2
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+    - name: Deploy to GCE
+      run: |
+        gcloud compute ssh ${{ secrets.GCP_USER }}@${{ secrets.GCP_INSTANCE }} --zone=${{ vars.INSTANCE_REGION }} -- "sudo docker pull arcade0425/snap_up_thsr:latest && \
+        sudo docker stop snap_up_thsr && \
+        sudo docker rm snap_up_thsr && \
+        sudo docker run --network=${{ secrets.LIVE_NETWORK }} \
+        -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
+        -e DB_HOST=${{ secrets.DB_HOST }} \
+        -e DB_USER=${{ secrets.DB_USER }} \
+        -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+        -e DB_NAME=${{ secrets.DB_NAME }} \
+        -e DEPLOY=live \
+        -e DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} \
+        -d \
+        --restart=always \
+        --name snap_up_thsr \
+        arcade0425/snap_up_thsr:latest && \
+        sudo docker pull arcade0425/snap_up_thsr_nginx:latest && \
+        sudo docker stop snap_up_thsr_nginx && \
+        sudo docker rm snap_up_thsr_nginx && \
+        sudo docker run --network=${{ secrets.LIVE_NETWORK }} \
+        -p 8080:80 \
+        -d \
+        --restart=always \
+        --name snap_up_thsr_nginx \
+        arcade0425/snap_up_thsr_nginx:latest && \
+        sudo docker image prune -a -f"

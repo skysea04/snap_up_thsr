@@ -6,4 +6,3 @@ __pycache__/
 # projects
 requirements/dev.txt
 *.log
-/src/static

@@ -1,19 +1,19 @@
 import os
 
 CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': f'redis://{os.environ.get("REDIS_HOST")}:{os.environ.get("REDIS_PORT", 6379)}?health_check_interval=30',
     },
-    'OPTIONS': {
-        'SOCKET_TIMEOUT': 30,
-        'SOCKET_CONNECT_TIMEOUT': 30,
-        'CONNECTION_POOL_CLASS': 'redis.connection.BlockingConnectionPool',
-        'CONNECTION_POOL_KWARGS': {
-            'max_connections': 1000,
-            'timeout': 30,
-        },
-    },
+    # 'OPTIONS': {
+    #     'SOCKET_TIMEOUT': 30,
+    #     'SOCKET_CONNECT_TIMEOUT': 30,
+    #     'CONNECTION_POOL_CLASS': 'redis.connection.BlockingConnectionPool',
+    #     'CONNECTION_POOL_KWARGS': {
+    #         'max_connections': 1000,
+    #         'timeout': 30,
+    #     },
+    # },
 }
 
 DATABASES = {

@@ -25,10 +25,8 @@ DEV_MODE = DEPLOY == 'dev'
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-q(g(so@an+@4#p2tf$ho3p@91iabn)!hv9u7ff=0z_@6wvbk^h'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
