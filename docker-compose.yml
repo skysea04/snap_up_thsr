@@ -3,6 +3,7 @@ services:
     image: redis:alpine
     ports:
       - "8684:6379"
+
   db:
     image: postgres:latest
     restart: always
@@ -26,6 +27,6 @@ services:
       - ./requirements:/requirements
     ports:
       - "8686:8000"
-    command: bash -c "pip freeze > /requirements/live.txt && gunicorn --timeout=300 --workers=2 --threads=8 --keep-alive=60 src.wsgi:application"
+    command: bash -c "pip freeze > /requirements/live.txt && tail -f /dev/null"
     environment:
       DEPLOY: dev

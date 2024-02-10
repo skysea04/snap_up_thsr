@@ -6,6 +6,4 @@ __pycache__/
 # projects
 requirements/dev.txt
 *.log
-recognize_img.py
-
-.github/
+/src/static

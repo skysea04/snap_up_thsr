@@ -82,6 +82,9 @@ def booking_task(booking_request: BookingRequest):
     thsr_ticket = PageParser.get_booked_ticket_info(complete_booking_page)
     with transaction.atomic():
         thsr_ticket.save()
+        if booking_request.booking_method:
+            booking_request.train_id = thsr_ticket.train_id
+
         booking_request.thsr_ticket = thsr_ticket
         booking_request.status = BookingRequest.Status.COMPLETED
         booking_request.error_msg = ''
