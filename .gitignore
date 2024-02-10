@@ -8,3 +8,4 @@ requirements/dev.txt
 *.log
 recognize_img.py
 
+.github/

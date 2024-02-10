@@ -1,6 +1,8 @@
-from basis.logger import log
-from django.db import transaction
 from pydantic import create_model
+
+from django.db import transaction
+
+from basis.logger import log
 from user.models import User
 
 from .constants.bookings import BookingMethod
@@ -41,14 +43,15 @@ def booking_task(booking_request: BookingRequest):
     if not ok:
         raise BookingException(err_msg)
 
-    user = User.get_by_email(booking_request.user_email)
+    user = User.get_by_email(booking_request.user.email)
     passenger_fields = {}
     if discount := PageParser.get_discount(confirm_ticket_page):
+        passenger_ids = booking_request.passenger_ids or [user.personal_id]
         passenger_lst = [
             Passenger(
                 discount=discount,
                 id=p_id,
-            ) for p_id in booking_request.passenger_ids
+            ) for p_id in passenger_ids
         ]
         passenger_fields = TicketForm.generate_discount_passenger_fields(passenger_lst)
 
@@ -59,7 +62,7 @@ def booking_task(booking_request: BookingRequest):
     )
     ticket_form = DiscountTicketForm(
         personal_id=user.personal_id,
-        phone=user.phone,
+        phone=user.phone or '',
         email=user.email,
     )
     if user.use_tgo_account:

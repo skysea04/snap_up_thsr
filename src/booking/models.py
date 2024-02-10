@@ -1,14 +1,19 @@
 from dataclasses import dataclass
-from datetime import datetime as dt, time, timedelta as td
+from datetime import datetime as dt
+from datetime import time
+from datetime import timedelta as td
+
+from pydantic import BaseModel, Field, validator
+
+from django.db import models
 
 from basis.db import BasisModel
-from django.db import models
-from pydantic import BaseModel, Field, validator
+from user.models import User
 
 from . import utils
 from .constants.bookings import (
-    AVAILABLE_TIMES, MAX_TICKET_NUM, AvailableTime, BookingMethod, PassengerNum, SeatPrefer,
-    Station, TypeOfTrip
+    AVAILABLE_TIMES, MAX_TICKET_NUM, AvailableTime,
+    BookingMethod, PassengerNum, SeatPrefer, Station, TypeOfTrip,
 )
 from .exceptions import BookingException
 
@@ -35,17 +40,21 @@ class BookingRequest(BasisModel):
         EXPIRED = -1
         DELETED = -2
 
+    user = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        db_constraint=False,
+    )
     status = models.PositiveSmallIntegerField(choices=Status.choices, default=Status.PENDING)
     thsr_ticket = models.ForeignKey(
         THSRTicket,
-        db_constraint=False,
         on_delete=models.DO_NOTHING,
+        db_constraint=False,
         null=True,
         blank=True,
         verbose_name='THSR Ticket ID'
     )
     train_id = models.CharField(max_length=10, blank=True)
-    user_email = models.EmailField()
     depart_station = models.PositiveSmallIntegerField(choices=Station.choices, default=Station.Nangang)
     dest_station = models.PositiveSmallIntegerField(choices=Station.choices, default=Station.Zuouing)
     type_of_trip = models.PositiveSmallIntegerField(choices=TypeOfTrip.choices, default=TypeOfTrip.ONE_WAY)
@@ -71,6 +80,9 @@ class BookingRequest(BasisModel):
     #     if sum([self.adult_num, self.child_num, self.disabled_num, self.elder_num, self.college_num]) > MAX_TICKET_NUM:
     #         raise Exception('Tickets can not exceed %s', MAX_TICKET_NUM)
 
+    def total_ticket_amount(self) -> int:
+        return sum([self.adult_num, self.child_num, self.disabled_num, self.elder_num, self.college_num])
+
     def check_not_yet_status(self):
         if self.status != self.Status.NOT_YET:
             return
@@ -92,7 +104,6 @@ class BookingRequest(BasisModel):
 
     class Meta:
         indexes = [
-            models.Index(fields=['user_email']),
             models.Index(fields=['status', '-depart_date']),
         ]
 

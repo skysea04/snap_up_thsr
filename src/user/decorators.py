@@ -1,7 +1,8 @@
+from django.http import HttpRequest
+
 from basis import messages
 from basis.exceptions import AppException
 from basis.logger import log
-from django.http import HttpRequest
 
 from . import error_codes
 from .models import User

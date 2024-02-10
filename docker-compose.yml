@@ -15,7 +15,9 @@ services:
       PGDATA: /var/lib/postgresql/data
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-dev
     links:
       - "db:db"
       - "cache:cache"
@@ -24,6 +26,6 @@ services:
       - ./requirements:/requirements
     ports:
       - "8686:8000"
-    command: bash -c "pip freeze > /requirements/live.txt && tail -f /etc/hosts"
+    command: bash -c "pip freeze > /requirements/live.txt && gunicorn --timeout=300 --workers=2 --threads=8 --keep-alive=60 src.wsgi:application"
     environment:
       DEPLOY: dev

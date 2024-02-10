@@ -1,17 +1,19 @@
 import time
-from datetime import datetime as dt, timedelta as td
+from datetime import datetime as dt
+from datetime import timedelta as td
 from typing import Dict, List, Optional, Tuple, Union
 
 import requests
-from booking.constants.bookings import AvailableTime
 from bs4 import BeautifulSoup
 from bs4.element import Tag
+
+from booking.constants.bookings import AvailableTime
 
 from . import exceptions, utils
 from .constants import urls
 from .constants.bookings import AVAILABLE_DAYS_AFTER_BOOKING, DISCOUNT_MAP, BookingMethod, Station
 from .constants.page_htmls import (
-    BookingPage, CompleteBookingPage, ConfirmTicketPage, ErrorPage, SelectTrainPage
+    BookingPage, CompleteBookingPage, ConfirmTicketPage, ErrorPage, SelectTrainPage,
 )
 from .models import BookingForm, BookingRequest, THSRTicket, Train
 
