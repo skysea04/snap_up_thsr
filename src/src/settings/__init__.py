@@ -29,6 +29,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
 
 ALLOWED_HOSTS = ['*']
+# CSRF_TRUSTED_ORIGINS = ['http://*']
 
 
 # Application definition

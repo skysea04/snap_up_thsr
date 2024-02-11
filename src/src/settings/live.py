@@ -30,3 +30,5 @@ DATABASES = {
         }
     }
 }
+
+CSRF_TRUSTED_ORIGINS = ['http://35.212.156.173:8080']

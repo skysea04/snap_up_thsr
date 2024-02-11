@@ -21,3 +21,4 @@ DATABASES = {
 }
 
 DEBUG = True
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8686']
