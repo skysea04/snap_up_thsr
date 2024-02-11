@@ -3,7 +3,6 @@ from pydantic import create_model
 from django.db import transaction
 
 from basis.logger import log
-from user.models import User
 
 from .constants.bookings import BookingMethod
 from .constants.page_htmls import ConfirmTicketPage, SelectTrainPage
@@ -43,7 +42,7 @@ def booking_task(booking_request: BookingRequest):
     if not ok:
         raise BookingException(err_msg)
 
-    user = User.get_by_email(booking_request.user.email)
+    user = booking_request.user
     passenger_fields = {}
     if discount := PageParser.get_discount(confirm_ticket_page):
         passenger_ids = booking_request.passenger_ids or [user.personal_id]
@@ -80,8 +79,10 @@ def booking_task(booking_request: BookingRequest):
         raise BookingException(err_msg)
 
     thsr_ticket = PageParser.get_booked_ticket_info(complete_booking_page)
+    thsr_ticket.user = user
     with transaction.atomic():
         thsr_ticket.save()
+
         if booking_request.booking_method:
             booking_request.train_id = thsr_ticket.train_id
 

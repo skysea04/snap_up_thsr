@@ -4,12 +4,13 @@ import time
 import traceback
 from datetime import timedelta as td
 
+from django.core.management.base import BaseCommand
+from django.utils import timezone as tz
+
 from basis.conf import CURRENT_TZ
 from basis.constants import Time
 from basis.logger import log
 from booking import tasks
-from django.core.management.base import BaseCommand
-from django.utils import timezone as tz
 
 log.addHandler(logging.StreamHandler())
 

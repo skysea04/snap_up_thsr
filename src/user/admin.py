@@ -29,6 +29,12 @@ class UserAdminMixin(admin.ModelAdmin):
 
         return qs.filter(user=request.user)
 
+    def save_model(self, request, obj, form, change):
+        if not obj.user:
+            obj.user = request.user
+
+        super().save_model(request, obj, form, change)
+
 
 class CustomUserAdmin(UserAdmin):
     # Update the list of fields to display in the admin interface.

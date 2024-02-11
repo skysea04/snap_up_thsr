@@ -83,16 +83,22 @@ class PageParser:
     @staticmethod
     def get_train_lst(booking_request: BookingRequest, select_train_page: Tag) -> List[Train]:
         train_lst = []
-        train_elem_list: List[Tag] = select_train_page.find_all('label', **SelectTrainPage.TRAIN_LIST)
+        train_elem_lst: List[Tag] = select_train_page.find_all('label', **SelectTrainPage.TRAIN_LIST)
 
-        for train_elem in train_elem_list:
+        for train_elem in train_elem_lst:
+            str_departure_time = train_elem.find('input').get(SelectTrainPage.DEPARTURE_TIME)
+            if str_departure_time < AvailableTime.get_label_name(booking_request.earliest_depart_time):
+                continue
+
             str_arrival_time = train_elem.find('input').get(SelectTrainPage.ARRIVAL_TIME)
-            arrival_time = dt.strptime(str_arrival_time, '%H:%M').time()
+            if str_arrival_time.startswith('00'):  # next day
+                continue
+
             if str_arrival_time > AvailableTime.get_label_name(booking_request.latest_arrival_time):
                 break
 
-            str_departure_time = train_elem.find('input').get(SelectTrainPage.DEPARTURE_TIME)
             departure_time = dt.strptime(str_departure_time, '%H:%M').time()
+            arrival_time = dt.strptime(str_arrival_time, '%H:%M').time()
             train_code = train_elem.find('input').get(SelectTrainPage.TRAIN_CODE)
             form_value = train_elem.find('input').get(SelectTrainPage.FORM_VALUE)
             dt_travel_time = dt.strptime(train_elem.find('input').get(SelectTrainPage.TRAVEL_TIME), '%H:%M')

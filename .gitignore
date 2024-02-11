@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+nohup.out
 
 # projects
 requirements/dev.txt

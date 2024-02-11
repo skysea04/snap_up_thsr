@@ -52,8 +52,10 @@ class BookingRequest(BasisModel):
         User,
         on_delete=models.DO_NOTHING,
         db_constraint=False,
+        null=True,
+        editable=False,
     )
-    status = models.PositiveSmallIntegerField(choices=Status.choices, default=Status.PENDING)
+    status = models.PositiveSmallIntegerField(choices=Status.choices, default=Status.PENDING, editable=False)
     thsr_ticket = models.ForeignKey(
         THSRTicket,
         on_delete=models.DO_NOTHING,

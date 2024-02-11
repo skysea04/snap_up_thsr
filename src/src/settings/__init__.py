@@ -28,9 +28,10 @@ DEV_MODE = DEPLOY == 'dev'
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
 
-ALLOWED_HOSTS = ['*']
-# CSRF_TRUSTED_ORIGINS = ['http://*']
-
+ALLOWED_HOSTS = [
+    'localhost',
+    'thsr.yhchiu.com',
+]
 
 # Application definition
 
