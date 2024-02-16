@@ -1,8 +1,7 @@
+from basis.db import BasisModel
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.db.models import UniqueConstraint
-
-from basis.db import BasisModel
 
 
 class InviteCode(BasisModel):
@@ -45,9 +44,13 @@ class User(AbstractBaseUser, PermissionsMixin, BasisModel):
         null=True,
         blank=True,
     )
-    personal_id = models.CharField(max_length=10, blank=True, verbose_name='Personal ID')
-    phone = models.CharField(max_length=10, blank=True)
-    use_tgo_account = models.BooleanField(default=False, help_text='TGO account is your personal ID')
+    personal_id = models.CharField(max_length=10, blank=True, verbose_name='身分證字號')
+    phone = models.CharField(max_length=10, blank=True, verbose_name='手機號碼')
+    use_tgo_account = models.BooleanField(
+        default=False,
+        verbose_name='使用 TGO 帳號',
+        help_text='TGO 帳號即為身分證字號 (目前僅提供個人用戶，未來會開發企業帳號選項)',
+    )
 
     objects = CustomUserManager()
 

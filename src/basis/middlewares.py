@@ -1,14 +1,14 @@
 import traceback
 
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 
 from . import error_codes, messages
 from .exceptions import AppException
 from .logger import log
 
 
-class ResponseHandleMiddleware:
+class APIResponseHandleMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -17,6 +17,7 @@ class ResponseHandleMiddleware:
         if isinstance(response, dict):
             return JsonResponse(response)
 
+        # return HttpResponse(response)
         return response
 
     def process_exception(self, request, exception):

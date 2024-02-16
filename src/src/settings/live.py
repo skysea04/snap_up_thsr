@@ -31,7 +31,4 @@ DATABASES = {
     }
 }
 
-CSRF_TRUSTED_ORIGINS = [
-    'http://35.212.156.173:8080',
-    'https://thsr.yhchiu.com',
-]
+CSRF_TRUSTED_ORIGINS = ['https://thsr.yhchiu.com']

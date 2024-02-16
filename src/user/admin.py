@@ -50,7 +50,7 @@ class CustomUserAdmin(UserAdmin):
     )
     _personal_info_field_set = (
         'Personal info',
-        {'fields': ('invite_code', 'personal_id', 'phone', 'use_tgo_account')}
+        {'fields': ('personal_id', 'phone', 'use_tgo_account')}
     )
 
     fieldsets = (

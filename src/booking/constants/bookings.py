@@ -144,16 +144,16 @@ class Station(models.IntegerChoices):
 
 
 class TypeOfTrip(models.IntegerChoices):
-    ONE_WAY = 0
-    ROUND_TRIP = 1
+    ONE_WAY = 0, '單程'
+    ROUND_TRIP = 1, '來回'
 
 
 class BookingMethod(models.IntegerChoices):
-    TIME = 0
-    TRAIN_NO = 1
+    TIME = 0, '時間'
+    TRAIN_NO = 1, '車次'
 
 
 class SeatPrefer(models.IntegerChoices):
-    NO_PREFER = 0
-    PREFER_WINDOW = 1
-    PREFER_AISLE = 2
+    NO_PREFER = 0, '無'
+    PREFER_WINDOW = 1, '靠窗'
+    PREFER_AISLE = 2, '靠走道'

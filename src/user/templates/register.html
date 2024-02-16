@@ -1,0 +1,31 @@
+{% extends 'base_generic.html' %}
+
+{% block title %}註冊使用者{% endblock %}
+
+{% block content %}
+  <style>
+    .register-form {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+  </style>
+
+  <div class="register-form">
+    <h2 class="text-center">Register</h2>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          <input type="{{ field.field.widget.input_type }}" class="form-control {% if field.errors %}is-invalid{% endif %}" id="{{ field.id_for_label }}" name="{{ field.html_name }}" {% if field.field.required %}required{% endif %}>
+          {% for error in field.errors %}
+            <div class="invalid-feedback">
+              {{ error }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary btn-block">Register</button>
+    </form>
+  </div>
+{% endblock %}

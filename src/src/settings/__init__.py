@@ -55,7 +55,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'basis.middlewares.ResponseHandleMiddleware',
+    'basis.middlewares.APIResponseHandleMiddleware',
 ]
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
@@ -65,7 +65,7 @@ ROOT_URLCONF = 'src.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -141,6 +141,9 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Taipei'
 
 USE_I18N = True
+USE_L10N = False
+DATE_FORMAT = 'Y-m-d'
+DATETIME_FORMAT = 'Y-m-d H:i:s'
 
 USE_TZ = True
 
