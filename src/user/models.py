@@ -16,6 +16,10 @@ class InviteCode(BasisModel):
     def get_for_update(cls, code: str) -> 'InviteCode':
         return cls.objects.select_for_update().filter(code=code).first()
 
+    @classmethod
+    def is_exist(cls, code: str) -> bool:
+        return cls.objects.filter(code=code).exists()
+
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):

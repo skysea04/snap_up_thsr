@@ -1,5 +1,12 @@
+import traceback
+import uuid
+
+from basis.logger import log
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.shortcuts import redirect
+from django.urls import path
+from user.models import InviteCode
 
 # Register your models here.
 from .models import InviteCode, User
@@ -11,8 +18,31 @@ class ListAdminMixin:
         super(ListAdminMixin, self).__init__(model, admin_site)
 
 
-admin_class = type('AdminClass', (ListAdminMixin, admin.ModelAdmin), {})
-admin.site.register(InviteCode, admin_class)
+class InviteCodeAdmin(ListAdminMixin, admin.ModelAdmin):
+    change_list_template = 'admin/invitecode_change_list.html'
+
+    def get_urls(self):
+        urls = [
+            path('create_invite_code/', self.create_invite_code),
+        ]
+        return urls + super().get_urls()
+
+    def create_invite_code(self, request):
+        code = uuid.uuid4().hex[:8]
+        while InviteCode.is_exist(code):
+            code = uuid.uuid4().hex[:8]
+
+        try:
+            InviteCode.create(code)
+
+        except Exception as e:
+            log.error('Error: %s', e)
+            log.error(traceback.format_exc())
+
+        return redirect('..')
+
+
+admin.site.register(InviteCode, InviteCodeAdmin)
 
 
 class UserAdminMixin(admin.ModelAdmin):
