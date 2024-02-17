@@ -59,8 +59,8 @@ class User(AbstractBaseUser, PermissionsMixin, BasisModel):
         help_text='訂票成功會寄簡訊通知，本欄位可不填寫，但填了會比較方便。',
     )
     buy_discount_ticket = models.BooleanField(
-        default=True, verbose_name='購買早鳥優惠票',
-        help_text='本選項乃為不想放置真實身份證字號之使用者設計。',
+        default=True, verbose_name='可以購買優惠票',
+        help_text='本選項乃為不想放置真實身份證字號之使用者設計。若取消勾選且架上只有優惠票，便不會購入任何票券',
     )
     use_tgo_account = models.BooleanField(
         default=False, verbose_name='使用 TGO 帳號',
