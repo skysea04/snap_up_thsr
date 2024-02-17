@@ -1,21 +1,15 @@
 from dataclasses import dataclass
-from datetime import datetime as dt
-from datetime import time
-from datetime import timedelta as td
-
-from pydantic import BaseModel, Field, validator
-
-from django.db import models
+from datetime import time, timedelta as td
 
 from basis.db import BasisModel
+from django.db import models
+from pydantic import BaseModel, Field, validator
 from user.models import User
 
 from . import utils
 from .constants.bookings import (
-    AVAILABLE_TIMES, MAX_TICKET_NUM, AvailableTime,
-    BookingMethod, PassengerNum, SeatPrefer, Station, TypeOfTrip,
+    AvailableTime, BookingMethod, PassengerNum, SeatPrefer, Station, TypeOfTrip
 )
-from .exceptions import BookingException
 
 
 class THSRTicket(BasisModel):
@@ -24,84 +18,101 @@ class THSRTicket(BasisModel):
         on_delete=models.DO_NOTHING,
         db_constraint=False,
     )
-    ticket_id = models.CharField(max_length=10, blank=True)
-    total_price = models.CharField(max_length=10, blank=True)
-    payment_deadline = models.CharField(max_length=10, blank=True)
-    train_id = models.CharField(max_length=10, blank=True)
-    seat_num = models.CharField(max_length=50, blank=True)
-    date = models.CharField(max_length=10, blank=True)
-    depart_time = models.CharField(max_length=255, blank=True)
-    arrival_time = models.CharField(max_length=255, blank=True)
-    depart_station = models.PositiveSmallIntegerField(choices=Station.choices)
-    arrival_station = models.PositiveSmallIntegerField(choices=Station.choices)
+    ticket_id = models.CharField(max_length=10, blank=True, verbose_name='訂位代號')
+    total_price = models.CharField(max_length=10, blank=True, verbose_name='總金額')
+    payment_deadline = models.CharField(max_length=10, blank=True, verbose_name='付款期限')
+    train_id = models.CharField(max_length=10, blank=True, verbose_name='車次')
+    seat_num = models.CharField(max_length=50, blank=True, verbose_name='座位號碼')
+    date = models.CharField(max_length=10, blank=True, verbose_name='乘車日期')
+    depart_time = models.CharField(max_length=255, blank=True, verbose_name='出發時間')
+    arrival_time = models.CharField(max_length=255, blank=True, verbose_name='抵達時間')
+    depart_station = models.PositiveSmallIntegerField(choices=Station.choices, verbose_name='啟程站')
+    arrival_station = models.PositiveSmallIntegerField(choices=Station.choices, verbose_name='到達站')
 
     def __str__(self) -> str:
         return self.ticket_id
 
+    class Meta:
+        verbose_name_plural = '已完成訂位資訊'
+
 
 class BookingRequest(BasisModel):
     class Status(models.IntegerChoices):
-        NOT_YET = 0
-        PENDING = 1
-        PROCESSING = 2
-        COMPLETED = 3
-        EXPIRED = -1
+        NOT_YET = 0, '尚未進入排程'
+        PENDING = 1, '訂購中'
+        COMPLETED = 2, '已完成'
+        EXPIRED = -1, '已過期'
         DELETED = -2
 
     user = models.ForeignKey(
         User,
         on_delete=models.DO_NOTHING,
         db_constraint=False,
+        null=True,
+        editable=False,
+        verbose_name='使用者帳號'
     )
-    status = models.PositiveSmallIntegerField(choices=Status.choices, default=Status.PENDING)
+    status = models.SmallIntegerField(
+        choices=Status.choices, default=Status.PENDING, editable=False, verbose_name='購票狀態')
     thsr_ticket = models.ForeignKey(
         THSRTicket,
         on_delete=models.DO_NOTHING,
         db_constraint=False,
         null=True,
         blank=True,
-        verbose_name='THSR Ticket ID'
+        editable=False,
+        verbose_name='訂位代號'
     )
-    train_id = models.CharField(max_length=10, blank=True)
-    depart_station = models.PositiveSmallIntegerField(choices=Station.choices, default=Station.Nangang)
-    dest_station = models.PositiveSmallIntegerField(choices=Station.choices, default=Station.Zuouing)
-    type_of_trip = models.PositiveSmallIntegerField(choices=TypeOfTrip.choices, default=TypeOfTrip.ONE_WAY)
-    booking_method = models.PositiveSmallIntegerField(choices=BookingMethod.choices, default=BookingMethod.TIME)
-    seat_prefer = models.PositiveSmallIntegerField(choices=SeatPrefer.choices, default=SeatPrefer.NO_PREFER)
-    adult_num = models.PositiveSmallIntegerField(choices=PassengerNum.choices, default=PassengerNum.One)
-    child_num = models.PositiveSmallIntegerField(choices=PassengerNum.choices, default=PassengerNum.Zero)
-    disabled_num = models.PositiveSmallIntegerField(choices=PassengerNum.choices, default=PassengerNum.Zero)
-    elder_num = models.PositiveSmallIntegerField(choices=PassengerNum.choices, default=PassengerNum.Zero)
-    college_num = models.PositiveSmallIntegerField(choices=PassengerNum.choices, default=PassengerNum.Zero)
-    depart_date = models.DateField()
+    depart_station = models.PositiveSmallIntegerField(
+        choices=Station.choices, default=Station.Nangang, verbose_name='啟程站')
+    dest_station = models.PositiveSmallIntegerField(
+        choices=Station.choices, default=Station.Zuouing, verbose_name='到達站')
+    type_of_trip = models.PositiveSmallIntegerField(
+        choices=TypeOfTrip.choices, default=TypeOfTrip.ONE_WAY,
+        verbose_name='單程/來回', help_text='來回票功能尚未開放，請選擇單程',
+    )
+    booking_method = models.PositiveSmallIntegerField(
+        choices=BookingMethod.choices, default=BookingMethod.TIME, verbose_name='訂票方式')
+    seat_prefer = models.PositiveSmallIntegerField(
+        choices=SeatPrefer.choices, default=SeatPrefer.NO_PREFER, verbose_name='座位偏好')
+    adult_num = models.PositiveSmallIntegerField(
+        choices=PassengerNum.choices, default=PassengerNum.One, verbose_name='全票')
+    child_num = models.PositiveSmallIntegerField(
+        choices=PassengerNum.choices, default=PassengerNum.Zero, verbose_name='孩童票(6-11歲)')
+    disabled_num = models.PositiveSmallIntegerField(
+        choices=PassengerNum.choices, default=PassengerNum.Zero, verbose_name='愛心票')
+    elder_num = models.PositiveSmallIntegerField(
+        choices=PassengerNum.choices, default=PassengerNum.Zero, verbose_name='敬老票(65+)')
+    college_num = models.PositiveSmallIntegerField(
+        choices=PassengerNum.choices, default=PassengerNum.Zero, verbose_name='大學生票')
+    depart_date = models.DateField(verbose_name='出發日期')
+    train_id = models.CharField(max_length=10, blank=True, verbose_name='車次', help_text='若以車次訂票需填寫')
     earliest_depart_time = models.CharField(
-        max_length=10, blank=True, choices=AvailableTime.choices, default=AvailableTime.NotChosen
+        max_length=10, blank=True, choices=AvailableTime.choices,
+        default=AvailableTime.NotChosen, verbose_name='最早出發時間',
+        help_text='若以時間訂票需選擇',
     )
     latest_arrival_time = models.CharField(
-        max_length=10, blank=True, choices=AvailableTime.choices, default=AvailableTime.TwentythreeFiftynine
+        max_length=10, blank=True, choices=AvailableTime.choices,
+        default=AvailableTime.NotChosen, verbose_name='最晚抵達時間',
+        help_text='若以時間訂票需選擇',
     )
-    passenger_ids = models.JSONField(default=list, blank=True, null=True)
-    deleted_at = models.DateTimeField(null=True, blank=True)
-    error_msg = models.CharField(max_length=255, blank=True)
-
-    # def check_tickets_amount(self):
-    #     if sum([self.adult_num, self.child_num, self.disabled_num, self.elder_num, self.college_num]) > MAX_TICKET_NUM:
-    #         raise Exception('Tickets can not exceed %s', MAX_TICKET_NUM)
+    passenger_ids = models.JSONField(
+        default=list, blank=True, null=True,
+        verbose_name='乘客身分證列表(折扣用)', help_text='僅供優惠票實名制使用，若只訂一張票或確定該時段沒有優惠則不須填寫，填寫格式為 ["A123456789", "B123456789"]',
+    )
+    error_msg = models.CharField(max_length=255, blank=True, editable=False, verbose_name='錯誤訊息')
+    deleted_at = models.DateTimeField(null=True, blank=True, editable=False, verbose_name='刪除時間')
 
     def total_ticket_amount(self) -> int:
         return sum([self.adult_num, self.child_num, self.disabled_num, self.elder_num, self.college_num])
 
-    def check_not_yet_status(self):
-        if self.status != self.Status.NOT_YET:
-            return
-
-        latest_booking_date = utils.get_latest_booking_date()
-        if latest_booking_date >= self.depart_date:
-            self.status = self.Status.PENDING
-
     def save(self, *args, **kwargs):
-        # self.check_tickets_amount()
-        self.check_not_yet_status()
+        if not self.pk:
+            latest_booking_date = utils.get_latest_booking_date()
+            if latest_booking_date < self.depart_date:
+                self.status = self.Status.NOT_YET
+
         super().save(*args, **kwargs)
 
     @classmethod
@@ -114,29 +125,7 @@ class BookingRequest(BasisModel):
         indexes = [
             models.Index(fields=['status', '-depart_date']),
         ]
-
-
-class BookingCondition(BaseModel):
-    start_station: int
-    dest_station: int
-    earliest_departure_time: dt
-    latest_arrival_time: dt
-
-    type_of_trip: int = TypeOfTrip.ONE_WAY
-    seat_prefer: int = SeatPrefer.NO_PREFER
-    booking_method: str = BookingMethod.TIME
-    adult_num: int = 1
-    child_num: int = 0
-    disabled_num: int = 0
-    elder_num: int = 0
-    college_num: int = 0
-
-    def get_request_departure_time(self) -> str:
-        departure_time = next(filter(lambda t: t[0] < self.earliest_departure_time.time(), AVAILABLE_TIMES), None)
-        if not departure_time:
-            raise BookingException('Wrong Departure Time')
-
-        return departure_time[1]
+        verbose_name_plural = '訂票表單(點擊 + Add 開始訂票)'
 
 
 class BookingForm(BaseModel):

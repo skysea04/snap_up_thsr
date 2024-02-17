@@ -32,4 +32,4 @@ class Command(BaseCommand):
                 log.error(log.error(traceback.print_exc(e)))
 
             except Exception as e:
-                log.error(log.error(traceback.print_exc(e)))
+                log.error(traceback.format_exc())

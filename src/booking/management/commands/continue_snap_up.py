@@ -8,10 +8,12 @@ from basis.conf import CURRENT_TZ
 from basis.constants import Time
 from basis.logger import log
 from booking import tasks
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone as tz
 
-log.addHandler(logging.StreamHandler())
+if settings.DEV_MODE:
+    log.addHandler(logging.StreamHandler())
 
 
 class SignalMark:
@@ -25,6 +27,13 @@ def sigterm_handler(*args):  # ignore signum and frame
 
 
 signal.signal(signal.SIGTERM, sigterm_handler)
+
+
+def switch_requests_status():
+    now = tz.now().astimezone(CURRENT_TZ)
+    today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    if (now - today).total_seconds() <= Time.TEN_MINUTES:
+        tasks.update_not_yet_requests_to_pending()
 
 
 def take_a_break():
@@ -42,7 +51,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         while not SignalMark.cleanup:
             try:
-                tasks.update_not_yet_requests_to_pending()
+                switch_requests_status()
+                tasks.expire_pending_requests()
                 tasks.book_all_pending_reqests()
                 take_a_break()
 

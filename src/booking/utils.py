@@ -30,7 +30,7 @@ def last_can_booking_date(depart_date: dt):
     return can_booking_date
 
 
-@expire_cache(seconds=Time.ONE_DAY, refresh_on_new_day=True)
+@expire_cache(seconds=Time.ONE_MINUTE, refresh_on_next_day=True)
 def get_latest_booking_date() -> date:
     today_date = date.today()
     try:

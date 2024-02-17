@@ -1,19 +1,17 @@
 import time
-from datetime import datetime as dt
-from datetime import timedelta as td
+from datetime import datetime as dt, timedelta as td
 from typing import Dict, List, Optional, Tuple, Union
 
 import requests
+from booking.constants.bookings import AvailableTime
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-
-from booking.constants.bookings import AvailableTime
 
 from . import exceptions, utils
 from .constants import urls
 from .constants.bookings import AVAILABLE_DAYS_AFTER_BOOKING, DISCOUNT_MAP, BookingMethod, Station
 from .constants.page_htmls import (
-    BookingPage, CompleteBookingPage, ConfirmTicketPage, ErrorPage, SelectTrainPage,
+    BookingPage, CompleteBookingPage, ConfirmTicketPage, ErrorPage, SelectTrainPage
 )
 from .models import BookingForm, BookingRequest, THSRTicket, Train
 
@@ -81,25 +79,32 @@ class PageParser:
         return booking_page.find(**page_type.NEXT_PAGE_PATH)['action']
 
     @staticmethod
-    def get_train_lst(booking_request: BookingRequest, select_train_page: Tag) -> List[Train]:
+    def get_train_lst(booking_request: BookingRequest, select_train_page: Tag, buy_discount_ticket: bool) -> List[Train]:
         train_lst = []
-        train_elem_list: List[Tag] = select_train_page.find_all('label', **SelectTrainPage.TRAIN_LIST)
+        train_elem_lst: List[Tag] = select_train_page.find_all('label', **SelectTrainPage.TRAIN_LIST)
 
-        for train_elem in train_elem_list:
+        for train_elem in train_elem_lst:
+            str_departure_time = train_elem.find('input').get(SelectTrainPage.DEPARTURE_TIME)
+            if str_departure_time < AvailableTime.get_label_name(booking_request.earliest_depart_time):
+                continue
+
             str_arrival_time = train_elem.find('input').get(SelectTrainPage.ARRIVAL_TIME)
-            arrival_time = dt.strptime(str_arrival_time, '%H:%M').time()
+            if str_arrival_time.startswith('00'):  # next day
+                continue
+
             if str_arrival_time > AvailableTime.get_label_name(booking_request.latest_arrival_time):
                 break
 
-            str_departure_time = train_elem.find('input').get(SelectTrainPage.DEPARTURE_TIME)
+            discount_elems: List[Tag] = train_elem.find(**SelectTrainPage.DISCOUNT_LIST).find_all('span')
+            if discount_elems and not buy_discount_ticket:
+                continue
+
             departure_time = dt.strptime(str_departure_time, '%H:%M').time()
+            arrival_time = dt.strptime(str_arrival_time, '%H:%M').time()
             train_code = train_elem.find('input').get(SelectTrainPage.TRAIN_CODE)
             form_value = train_elem.find('input').get(SelectTrainPage.FORM_VALUE)
             dt_travel_time = dt.strptime(train_elem.find('input').get(SelectTrainPage.TRAVEL_TIME), '%H:%M')
-
             travel_time = td(hours=dt_travel_time.hour, minutes=dt_travel_time.minute)
-
-            discount_elems: List[Tag] = train_elem.find(**SelectTrainPage.DISCOUNT_LIST).find_all('span')
             discounts = [DISCOUNT_MAP[d.text] for d in discount_elems]
 
             train_lst.append(Train(

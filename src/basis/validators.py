@@ -1,3 +1,4 @@
+import random
 import re
 from typing import Optional
 
@@ -8,9 +9,21 @@ local_map = {'A': 10, 'B': 11, 'C': 12, 'D': 13, 'E': 14, 'F': 15, 'G': 16,
              'O': 35, 'P': 23, 'Q': 24, 'R': 25, 'S': 26, 'T': 27, 'U': 28,
              'V': 29, 'W': 32, 'X': 30, 'Y': 31, 'Z': 33,
              }
+auth_multiplier = [1, 9, 8, 7, 6, 5, 4, 3, 2, 1, 1]
 
 PERSONAL_ID_PATTERN = r'^[A-Z][12]\d{8}$'
 REGION_TW = 'TW'
+
+
+def generate_personal_id() -> str:
+    while True:
+        pid = random.choice(list(local_map.keys())) + \
+            str(random.choice([1, 2])) + ''.join([str(random.randint(0, 9)) for _ in range(8)])
+        if len(pid) != 10 or not re.match(PERSONAL_ID_PATTERN, pid):
+            continue
+        source = sum([int(x) * auth_multiplier[i] for i, x in enumerate(str(local_map[pid[0]]) + pid[1:])])
+        if source % 10 == 0:
+            return pid
 
 
 def validate_personal_id(personal_id: str) -> bool:

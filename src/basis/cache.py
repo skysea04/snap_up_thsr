@@ -5,7 +5,7 @@ from functools import wraps
 from .constants import Time
 
 
-def expire_cache(seconds: int = Time.TEN_MINUTES, refresh_on_new_day: bool = False):
+def expire_cache(seconds: int = Time.TEN_MINUTES, refresh_on_next_day: bool = False):
     def cache_decorator(func):
         cache_data = {}
 
@@ -16,7 +16,7 @@ def expire_cache(seconds: int = Time.TEN_MINUTES, refresh_on_new_day: bool = Fal
 
             if cache_key in cache_data:
                 result, timestamp, last_day = cache_data[cache_key]
-                if refresh_on_new_day and (last_day is None or last_day != current_day):
+                if refresh_on_next_day and (last_day is None or last_day != current_day):
                     pass  # Skip returning the cached result and refresh the cache
                 elif time.time() - timestamp < seconds:
                     return result
