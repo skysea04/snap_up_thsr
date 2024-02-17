@@ -1,9 +1,11 @@
 import traceback
 import uuid
+from collections.abc import Sequence
 
 from basis.logger import log
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.http import HttpRequest
 from django.shortcuts import redirect
 from django.urls import path
 from user.models import InviteCode
@@ -68,11 +70,11 @@ class UserAdminMixin(admin.ModelAdmin):
 
 class CustomUserAdmin(UserAdmin):
     # Update the list of fields to display in the admin interface.
-    list_display = ('email', 'is_staff', 'is_active',)
-    list_filter = ('email', 'is_staff', 'is_active',)
+    list_display = ('email', 'personal_id', 'phone', 'buy_discount_ticket', 'use_tgo_account')
+    list_filter = ()
 
     _default_field_set = (
-        None, {'fields': ('email', 'password')}
+        None, {'fields': ('email',)}
     )
     _permissions_field_set = (
         'Permissions',
@@ -80,20 +82,22 @@ class CustomUserAdmin(UserAdmin):
     )
     _personal_info_field_set = (
         'Personal info',
-        {'fields': ('personal_id', 'phone', 'use_tgo_account')}
+        {'fields': ('personal_id', 'phone', 'buy_discount_ticket', 'use_tgo_account',
+                    'tgo_account_same_as_personal_id', 'tgo_account')}
     )
 
     fieldsets = (
         _default_field_set, _permissions_field_set, _personal_info_field_set,
     )
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'is_staff', 'is_active', 'invite_code', 'personal_id', 'phone', 'use_tgo_account')}
-         ),
-    )
+
     search_fields = ('email',)
     ordering = ('email',)
+
+    def get_list_display(self, request):
+        if request.user.is_superuser:
+            return ('email', 'personal_id', 'phone', 'buy_discount_ticket', 'use_tgo_account', 'is_superuser')
+        else:
+            return ('email', 'personal_id', 'phone', 'buy_discount_ticket', 'use_tgo_account')
 
     def get_fieldsets(self, request, obj=None):
         if not obj:
@@ -110,6 +114,9 @@ class CustomUserAdmin(UserAdmin):
             return qs
 
         return qs.filter(email=request.user.email)
+
+    class Media:
+        js = ('user/tgo_toggle.js',)
 
 
 admin.site.register(User, CustomUserAdmin)

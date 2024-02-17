@@ -6,8 +6,14 @@ from user.models import InviteCode, User
 
 
 class RegistrationForm(UserCreationForm):
-    email = forms.EmailField(required=True)
-    invite_code = forms.CharField(required=True)
+    def __init__(self, *args, **kwargs):
+        super(RegistrationForm, self).__init__(*args, **kwargs)
+
+        self.fields['password1'].label = '密碼'
+        self.fields['password2'].label = '確認密碼'
+
+    email = forms.EmailField(required=True, label='信箱')
+    invite_code = forms.CharField(required=True, label='邀請碼')
 
     def clean_invite_code(self):
         invite_code = self.cleaned_data['invite_code']

@@ -1,6 +1,6 @@
 {% extends 'base_generic.html' %}
 
-{% block title %}註冊使用者{% endblock %}
+{% block title %}使用者註冊{% endblock %}
 
 {% block content %}
   <style>
@@ -11,7 +11,7 @@
   </style>
 
   <div class="register-form">
-    <h2 class="text-center">Register</h2>
+    <h2 class="text-center">使用者註冊</h2>
     <form method="post">
       {% csrf_token %}
       {% for field in form %}

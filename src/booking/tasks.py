@@ -1,10 +1,12 @@
+from datetime import date, datetime as dt, timedelta as td
+
+from basis.conf import CURRENT_TZ
+from basis.logger import log
+from django.db import transaction
+from django.utils import timezone as tz
 from pydantic import create_model
 
-from django.db import transaction
-
-from basis.logger import log
-
-from .constants.bookings import BookingMethod
+from .constants.bookings import AVAILABLE_TIME_MAP, BookingMethod
 from .constants.page_htmls import ConfirmTicketPage, SelectTrainPage
 from .exceptions import BookingException
 from .models import BookingForm, BookingRequest, Passenger, TicketForm, TrainForm, TrainSelector
@@ -14,6 +16,7 @@ from .utils import get_latest_booking_date
 
 def booking_task(booking_request: BookingRequest):
     sess = THSRSession()
+    user = booking_request.user
     booking_page = sess.get_booking_page()
     booking_form = BookingForm.generate_form(
         booking_request=booking_request,
@@ -23,7 +26,7 @@ def booking_task(booking_request: BookingRequest):
 
     if booking_request.booking_method == BookingMethod.TIME:
         select_train_page = BookingProcessor.submit_booking_condition(sess, booking_page, booking_form)
-        train_lst = PageParser.get_train_lst(booking_request, select_train_page)
+        train_lst = PageParser.get_train_lst(booking_request, select_train_page, user.buy_discount_ticket)
         if not train_lst:
             raise BookingException('no train available')
 
@@ -42,7 +45,6 @@ def booking_task(booking_request: BookingRequest):
     if not ok:
         raise BookingException(err_msg)
 
-    user = booking_request.user
     passenger_fields = {}
     if discount := PageParser.get_discount(confirm_ticket_page):
         passenger_ids = booking_request.passenger_ids or [user.personal_id]
@@ -61,12 +63,15 @@ def booking_task(booking_request: BookingRequest):
     )
     ticket_form = DiscountTicketForm(
         personal_id=user.personal_id,
-        phone=user.phone or '',
+        phone=user.phone,
         email=user.email,
     )
     if user.use_tgo_account:
         ticket_form.member_radio = PageParser.get_tgo_member_radio(confirm_ticket_page)
-        ticket_form.member_account = user.personal_id
+        if user.tgo_account_same_as_personal_id:
+            ticket_form.member_account = user.personal_id
+        else:
+            ticket_form.member_account = user.tgo_account
     else:
         ticket_form = PageParser.get_not_member_radio(confirm_ticket_page)
 
@@ -99,6 +104,26 @@ def update_not_yet_requests_to_pending():
         if request.depart_date <= latest_booking_date:
             request.status = BookingRequest.Status.PENDING
             request.save()
+
+
+def expire_pending_requests():
+    pending_requests = BookingRequest.get_all_by_status(BookingRequest.Status.PENDING)
+    now = tz.now().astimezone(CURRENT_TZ)
+    for request in pending_requests:
+        if request.booking_method == BookingMethod.TIME:
+            earliest_booking_time = dt.combine(
+                request.depart_date,
+                AVAILABLE_TIME_MAP[request.earliest_depart_time],
+                tzinfo=CURRENT_TZ,
+            )
+            if now + td(minutes=30) > earliest_booking_time:
+                request.status = BookingRequest.Status.EXPIRED
+                request.save()
+
+        else:  # Train No
+            if now.date() >= request.depart_date:
+                request.status = BookingRequest.Status.EXPIRED
+                request.save()
 
 
 def book_all_pending_reqests():

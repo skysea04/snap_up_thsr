@@ -3,7 +3,7 @@ name: Deploy to Google Compute Engine
 on:
   push:
     branches:
-      - dev  # Replace with your branch
+      - master
 
 jobs:
   build-and-push:
@@ -16,7 +16,6 @@ jobs:
       with:
         username: arcade0425
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-      # if: steps.changes.outputs.matched == 'true'
 
     # - name: Check for changes
     #   id: changes

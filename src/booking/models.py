@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime as dt, time, timedelta as td
+from datetime import time, timedelta as td
 
 from basis.db import BasisModel
 from django.db import models
@@ -8,10 +8,8 @@ from user.models import User
 
 from . import utils
 from .constants.bookings import (
-    AVAILABLE_TIMES, MAX_TICKET_NUM, AvailableTime, BookingMethod, PassengerNum, SeatPrefer,
-    Station, TypeOfTrip
+    AvailableTime, BookingMethod, PassengerNum, SeatPrefer, Station, TypeOfTrip
 )
-from .exceptions import BookingException
 
 
 class THSRTicket(BasisModel):
@@ -54,7 +52,7 @@ class BookingRequest(BasisModel):
         editable=False,
         verbose_name='使用者帳號'
     )
-    status = models.PositiveSmallIntegerField(
+    status = models.SmallIntegerField(
         choices=Status.choices, default=Status.PENDING, editable=False, verbose_name='購票狀態')
     thsr_ticket = models.ForeignKey(
         THSRTicket,
@@ -101,7 +99,7 @@ class BookingRequest(BasisModel):
     )
     passenger_ids = models.JSONField(
         default=list, blank=True, null=True,
-        verbose_name='乘客身分證字號', help_text='僅供優惠票實名制使用，若只訂一張票或確定該時段沒有優惠則不須填寫，填寫格式為 ["A123456789", "B123456789"]',
+        verbose_name='乘客身分證列表(折扣用)', help_text='僅供優惠票實名制使用，若只訂一張票或確定該時段沒有優惠則不須填寫，填寫格式為 ["A123456789", "B123456789"]',
     )
     error_msg = models.CharField(max_length=255, blank=True, editable=False, verbose_name='錯誤訊息')
     deleted_at = models.DateTimeField(null=True, blank=True, editable=False, verbose_name='刪除時間')
@@ -128,29 +126,6 @@ class BookingRequest(BasisModel):
             models.Index(fields=['status', '-depart_date']),
         ]
         verbose_name_plural = '訂票表單(點擊 + Add 開始訂票)'
-
-
-class BookingCondition(BaseModel):
-    start_station: int
-    dest_station: int
-    earliest_departure_time: dt
-    latest_arrival_time: dt
-
-    type_of_trip: int = TypeOfTrip.ONE_WAY
-    seat_prefer: int = SeatPrefer.NO_PREFER
-    booking_method: str = BookingMethod.TIME
-    adult_num: int = 1
-    child_num: int = 0
-    disabled_num: int = 0
-    elder_num: int = 0
-    college_num: int = 0
-
-    def get_request_departure_time(self) -> str:
-        departure_time = next(filter(lambda t: t[0] < self.earliest_departure_time.time(), AVAILABLE_TIMES), None)
-        if not departure_time:
-            raise BookingException('Wrong Departure Time')
-
-        return departure_time[1]
 
 
 class BookingForm(BaseModel):

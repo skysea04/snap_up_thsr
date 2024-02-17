@@ -32,7 +32,7 @@ signal.signal(signal.SIGTERM, sigterm_handler)
 def switch_requests_status():
     now = tz.now().astimezone(CURRENT_TZ)
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    if (now - today).total_seconds <= Time.TEN_MINUTES:
+    if (now - today).total_seconds() <= Time.TEN_MINUTES:
         tasks.update_not_yet_requests_to_pending()
 
 
@@ -52,6 +52,7 @@ class Command(BaseCommand):
         while not SignalMark.cleanup:
             try:
                 switch_requests_status()
+                tasks.expire_pending_requests()
                 tasks.book_all_pending_reqests()
                 take_a_break()
 
