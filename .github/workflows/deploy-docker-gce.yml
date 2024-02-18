@@ -63,6 +63,8 @@ jobs:
         -e DB_NAME=${{ secrets.DB_NAME }} \
         -e DEPLOY=live \
         -e DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} \
+        -e EMAIL_HOST_USER=${{ vars.EMAIL_HOST_USER }} \
+        -e EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }} \  
         -d \
         --restart=always \
         --name snap_up_thsr \

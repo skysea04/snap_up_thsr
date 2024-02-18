@@ -1,0 +1,21 @@
+{% extends "admin/login.html" %}
+
+{% block content %}
+  {{ block.super }}  <!-- This includes the original content -->
+
+  <!-- Add your custom buttons -->
+  <div style="
+    display: inline-flex; 
+    justify-content: space-between;
+    width:100%;
+    margin-top: 10px;
+  ">
+    <div>
+      <a href="/user/" class="btn btn-primary">Sign Up</a>
+    </div>
+    <div>
+      <a href="/user/password_reset/" class="btn btn-primary">Forgot Password?</a>
+      <!-- </div> -->
+    </div>
+  </div>    
+{% endblock %}

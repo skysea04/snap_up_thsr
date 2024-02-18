@@ -22,3 +22,4 @@ DATABASES = {
 
 DEBUG = True
 CSRF_TRUSTED_ORIGINS = ['http://localhost:8686']
+LOGIN_URL = 'admin:login'
