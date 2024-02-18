@@ -44,3 +44,5 @@ services:
     environment:
       DEPLOY: dev
       DJANGO_SECRET_KEY: dev
+      EMAIL_HOST_USER: your-email@gmail.com
+      EMAIL_HOST_PASSWORD: your-email-application-password

@@ -7,3 +7,4 @@ nohup.out
 # projects
 requirements/dev.txt
 *.log
+docker-compose.yml
