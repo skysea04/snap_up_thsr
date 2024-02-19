@@ -73,7 +73,7 @@ def booking_task(booking_request: BookingRequest):
         else:
             ticket_form.member_account = user.tgo_account
     else:
-        ticket_form = PageParser.get_not_member_radio(confirm_ticket_page)
+        ticket_form.member_radio = PageParser.get_not_member_radio(confirm_ticket_page)
 
     complete_booking_page = sess.confirm_ticket(
         PageParser.get_next_page_path(ConfirmTicketPage, confirm_ticket_page),
