@@ -33,7 +33,8 @@ class THSRTicket(BasisModel):
         return self.ticket_id
 
     class Meta:
-        verbose_name_plural = '已完成訂位資訊'
+        verbose_name = '已完成訂位'
+        verbose_name_plural = '已完成訂位'
 
 
 class BookingRequest(BasisModel):
@@ -125,7 +126,8 @@ class BookingRequest(BasisModel):
         indexes = [
             models.Index(fields=['status', '-depart_date']),
         ]
-        verbose_name_plural = '訂票表單(點擊 + Add 開始訂票)'
+        verbose_name = '訂票表單'
+        verbose_name_plural = '訂票表單(點擊 + 新增訂票排程)'
 
 
 class BookingForm(BaseModel):
@@ -243,9 +245,6 @@ class TicketForm(BaseModel):
         passenger_fields = {}
         for idx, passenger in enumerate(passengers):
             passenger_fields.update(cls.generate_passenger_fields(passenger, idx))
-
-        # for key, value in passenger_fields.items():
-        #     setattr(self, key, value)
 
         return passenger_fields
 

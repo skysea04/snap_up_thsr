@@ -97,4 +97,5 @@ class User(AbstractBaseUser, PermissionsMixin, BasisModel):
             UniqueConstraint('email', name='uniq_email'),
             UniqueConstraint('invite_code', name='uniq_invite_code'),
         ]
+        verbose_name = '使用者資訊'
         verbose_name_plural = '使用者資訊(請先編輯完再訂票)'
