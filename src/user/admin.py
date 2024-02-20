@@ -1,11 +1,9 @@
 import traceback
 import uuid
-from collections.abc import Sequence
 
 from basis.logger import log
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.http import HttpRequest
 from django.shortcuts import redirect
 from django.urls import path
 from user.models import InviteCode

@@ -51,10 +51,12 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         while not SignalMark.cleanup:
             try:
+                log.info('Start snap up')
                 switch_requests_status()
-                tasks.expire_pending_requests()
                 tasks.book_all_pending_reqests()
+                tasks.expire_pending_requests()
                 take_a_break()
+                log.info('Snap up fininshed, take a break')
 
             except Exception as e:
                 log.error(e)
