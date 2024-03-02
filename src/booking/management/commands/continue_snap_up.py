@@ -1,8 +1,8 @@
 import logging
 import signal
-import time
 import traceback
-from datetime import timedelta as td
+from datetime import time
+from time import sleep
 
 from basis.conf import CURRENT_TZ
 from basis.constants import Time
@@ -31,20 +31,18 @@ signal.signal(signal.SIGTERM, sigterm_handler)
 
 def switch_requests_status():
     now = tz.now().astimezone(CURRENT_TZ)
-    today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    if (now - today).total_seconds() <= Time.TEN_MINUTES:
+    if now.time() < time(0, 3):
         tasks.update_not_yet_requests_to_pending()
 
 
 def take_a_break():
     now = tz.now().astimezone(CURRENT_TZ)
-    next_day = (now + td(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-    time_diff = (next_day - now).total_seconds()
-
-    if time_diff < Time.ONE_MINUTE:
-        time.sleep(time_diff)
+    now_time = now.time()
+    if now_time < time(23, 59):
+        sleep(Time.ONE_MINUTE)
     else:
-        time.sleep(Time.ONE_MINUTE)
+        time_diff = Time.ONE_MINUTE - now_time.second
+        sleep(time_diff)
 
 
 class Command(BaseCommand):
@@ -55,10 +53,10 @@ class Command(BaseCommand):
                 switch_requests_status()
                 tasks.book_all_pending_reqests()
                 tasks.expire_pending_requests()
-                take_a_break()
                 log.info('Snap up fininshed, take a break')
+                take_a_break()
 
             except Exception as e:
                 log.error(e)
                 log.error(traceback.format_exc())
-                time.sleep(Time.ONE_MINUTE)
+                sleep(Time.ONE_MINUTE)

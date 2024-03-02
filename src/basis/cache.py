@@ -25,5 +25,12 @@ def expire_cache(seconds: int = Time.TEN_MINUTES, refresh_on_next_day: bool = Fa
             cache_data[cache_key] = (result, time.time(), current_day)
             return result
 
+        def clear(*args, **kwargs):
+            cache_key = (args, frozenset(kwargs.items()))
+            if cache_key in cache_data:
+                del cache_data[cache_key]
+
+        wrapper.clear = clear
         return wrapper
+
     return cache_decorator
