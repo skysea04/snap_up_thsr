@@ -1,4 +1,4 @@
-from datetime import date, datetime as dt, timedelta as td
+from datetime import datetime as dt, timedelta as td
 
 from basis.conf import CURRENT_TZ
 from basis.logger import log
