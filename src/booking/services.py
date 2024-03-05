@@ -201,6 +201,10 @@ def check_resp_ok(page: Tag) -> Tuple[bool, Optional[str]]:
     if error_msg:
         return False, 'ERROR__THSR_SYSTEM_DENY'
 
+    error_msg = page.find(**ErrorPage.ERROR_MESSAGE_SYSTEM_BUSY)
+    if error_msg:
+        return False, '系統忙碌中，請耐心等候，並請勿使用「重新整理」鍵或離開本頁面。'
+
     error_content = page.find(**ErrorPage.ERROR_CONTENT)
     if error_content:
         return False, error_content.find('p').text

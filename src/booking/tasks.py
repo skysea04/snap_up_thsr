@@ -18,6 +18,10 @@ def booking_task(booking_request: BookingRequest):
     sess = THSRSession()
     user = booking_request.user
     booking_page = sess.get_booking_page()
+    ok, err_msg = check_resp_ok(booking_page)
+    if not ok:
+        raise BookingException(err_msg)
+
     booking_form = BookingForm.generate_form(
         booking_request=booking_request,
         booking_method_radio=PageParser.get_booking_method_radio(booking_page, booking_request),
