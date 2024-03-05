@@ -130,12 +130,16 @@ def expire_pending_requests():
                 request.save()
 
 
-def book_all_pending_reqests():
+def book_all_pending_reqests() -> bool:
     pending_requests = BookingRequest.get_all_by_status(BookingRequest.Status.PENDING)
+    counter = 0
     for request in pending_requests:
         try:
             booking_task(request)
+            counter += 1
         except BookingException as e:
             log.error(e)
             request.error_msg = str(e)
             request.save()
+
+    return counter == len(pending_requests)

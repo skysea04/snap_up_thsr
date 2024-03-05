@@ -35,13 +35,14 @@ def switch_requests_status():
         tasks.update_not_yet_requests_to_pending()
 
 
-def take_a_break():
+def take_a_break(all_success: bool):
     now = tz.now().astimezone(CURRENT_TZ)
     now_time = now.time()
-    if now_time < time(0, 30):
-        sleep(Time.FIFTEEN_SECONDS)
-    elif now_time < time(23, 59):
-        sleep(Time.ONE_MINUTE)
+    if now_time < time(23, 59):
+        if all_success:
+            sleep(Time.ONE_MINUTE)
+        else:
+            sleep(Time.FIFTEEN_SECONDS)
     else:
         time_diff = Time.ONE_MINUTE - now_time.second
         sleep(time_diff)
@@ -53,10 +54,10 @@ class Command(BaseCommand):
             try:
                 log.info('Start snap up')
                 switch_requests_status()
-                tasks.book_all_pending_reqests()
+                all_success = tasks.book_all_pending_reqests()
                 tasks.expire_pending_requests()
                 log.info('Snap up fininshed, take a break')
-                take_a_break()
+                take_a_break(all_success)
 
             except Exception as e:
                 log.error(e)
