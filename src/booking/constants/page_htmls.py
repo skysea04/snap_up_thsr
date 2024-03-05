@@ -81,6 +81,7 @@ class CompleteBookingPage:
 class ErrorPage:
     ERROR_FEEDBACK = {'class': 'feedbackPanelERROR'}
     ERROR_MESSAGE = {'text': '抱歉，無法繼續提供您訂票的服務，可能發生原因及解決方法如下：'}
+    ERROR_MESSAGE_SYSTEM_BUSY = {'text': '系統忙碌中，請耐心等候，並請勿使用「重新整理」鍵或離開本頁面。'}
     ERROR_CONTENT = {'class': 'error-content'}
 
     ERROR_SECURITY_CODE = '檢測碼輸入錯誤，請確認後重新輸入，謝謝！'

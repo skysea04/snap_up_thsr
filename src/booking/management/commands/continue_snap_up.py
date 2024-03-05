@@ -38,7 +38,9 @@ def switch_requests_status():
 def take_a_break():
     now = tz.now().astimezone(CURRENT_TZ)
     now_time = now.time()
-    if now_time < time(23, 59):
+    if now_time < time(0, 30):
+        sleep(Time.FIFTEEN_SECONDS)
+    elif now_time < time(23, 59):
         sleep(Time.ONE_MINUTE)
     else:
         time_diff = Time.ONE_MINUTE - now_time.second
