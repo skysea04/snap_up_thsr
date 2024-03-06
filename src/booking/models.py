@@ -17,6 +17,8 @@ class THSRTicket(BasisModel):
         User,
         on_delete=models.DO_NOTHING,
         db_constraint=False,
+        editable=False,
+        verbose_name='使用者帳號',
     )
     ticket_id = models.CharField(max_length=10, blank=True, verbose_name='訂位代號')
     total_price = models.CharField(max_length=10, blank=True, verbose_name='總金額')
@@ -43,7 +45,6 @@ class BookingRequest(BasisModel):
         PENDING = 1, '訂購中'
         COMPLETED = 2, '已完成'
         EXPIRED = -1, '已過期'
-        DELETED = -2
 
     user = models.ForeignKey(
         User,
@@ -102,8 +103,7 @@ class BookingRequest(BasisModel):
         default=list, blank=True, null=True,
         verbose_name='乘客身分證列表(折扣用)', help_text='僅供優惠票實名制使用，若只訂一張票或確定該時段沒有優惠則不須填寫，填寫格式為 ["A123456789", "B123456789"]',
     )
-    error_msg = models.CharField(max_length=255, blank=True, editable=False, verbose_name='錯誤訊息')
-    deleted_at = models.DateTimeField(null=True, blank=True, editable=False, verbose_name='刪除時間')
+    error_msg = models.CharField(max_length=255, blank=True, editable=False, verbose_name='錯誤訊息(前一輪訂票失敗原因)')
 
     def total_ticket_amount(self) -> int:
         return sum([self.adult_num, self.child_num, self.disabled_num, self.elder_num, self.college_num])

@@ -59,11 +59,32 @@ class UserAdminMixin(admin.ModelAdmin):
 
         return qs.filter(user=request.user)
 
+    def get_list_filter(self, request):
+        if request.user.is_superuser:
+            return ('user',) + super().get_list_filter(request)
+
+        return super().get_list_filter(request)
+
     def save_model(self, request, obj, form, change):
         if not obj.user:
             obj.user = request.user
 
         super().save_model(request, obj, form, change)
+
+
+class UserFilter(admin.SimpleListFilter):
+    title = ('使用者帳號')
+    parameter_name = 'user'
+
+    def lookups(self, request, model_admin):
+        if request.user.is_superuser:
+            return [(user.id, user.email) for user in User.objects.all()]
+        return [(request.user.id, request.user.email)]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(user__id=self.value())
+        return queryset
 
 
 class CustomUserAdmin(UserAdmin):
