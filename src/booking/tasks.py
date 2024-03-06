@@ -32,7 +32,7 @@ def booking_task(booking_request: BookingRequest):
         select_train_page = BookingProcessor.submit_booking_condition(sess, booking_page, booking_form)
         train_lst = PageParser.get_train_lst(booking_request, select_train_page, user.buy_discount_ticket)
         if not train_lst:
-            raise BookingException('no train available')
+            raise BookingException('沒有對應條件的車次')
 
         train = TrainSelector.get_earliest(train_lst)
         train_form = TrainForm(train_value=train.value)
@@ -138,6 +138,10 @@ def book_all_pending_reqests() -> bool:
             booking_task(request)
             counter += 1
         except BookingException as e:
+            log.error(e)
+            request.error_msg = str(e)
+            request.save()
+        except Exception as e:
             log.error(e)
             request.error_msg = str(e)
             request.save()

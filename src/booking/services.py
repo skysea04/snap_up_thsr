@@ -54,6 +54,12 @@ class THSRSession(requests.Session):
 
 class PageParser:
     @staticmethod
+    def check_booking_page_ok(booking_page: Tag) -> Tuple[bool, Optional[str]]:
+        img_ele = booking_page.find(**BookingPage.SECURITY_IMAGE)
+        if not img_ele:
+            return False, 'ERROR__THSR_SYSTEM_DENY'
+
+    @staticmethod
     def get_booking_method_radio(booking_page: Tag, booking_request: BookingRequest) -> Dict:
         if booking_request.booking_method == BookingMethod.TIME:
             return booking_page.find(**BookingPage.BOOKING_METHOD_TIME_RADIO).get('value')
@@ -199,11 +205,11 @@ def check_resp_ok(page: Tag) -> Tuple[bool, Optional[str]]:
 
     error_msg = page.find(**ErrorPage.ERROR_MESSAGE)
     if error_msg:
-        return False, 'ERROR__THSR_SYSTEM_DENY'
+        return False, '高鐵系統拒絕訂票'
 
     error_msg = page.find(ErrorPage.server_busy)
     if error_msg:
-        return False, '系統忙碌中，請耐心等候，並請勿使用「重新整理」鍵或離開本頁面。'
+        return False, '高鐵系統忙碌中'
 
     error_content = page.find(**ErrorPage.ERROR_CONTENT)
     if error_content:
