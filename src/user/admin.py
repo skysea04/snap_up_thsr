@@ -72,21 +72,6 @@ class UserAdminMixin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-class UserFilter(admin.SimpleListFilter):
-    title = ('使用者帳號')
-    parameter_name = 'user'
-
-    def lookups(self, request, model_admin):
-        if request.user.is_superuser:
-            return [(user.id, user.email) for user in User.objects.all()]
-        return [(request.user.id, request.user.email)]
-
-    def queryset(self, request, queryset):
-        if self.value():
-            return queryset.filter(user__id=self.value())
-        return queryset
-
-
 class CustomUserAdmin(UserAdmin):
     # Update the list of fields to display in the admin interface.
     list_display = ('email', 'personal_id', 'phone', 'buy_discount_ticket', 'use_tgo_account')
