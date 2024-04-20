@@ -1,8 +1,7 @@
 from django.contrib import admin
 
 from basis.admin import ForeignKeyLinksMixin
-from user.admin import UserAdminMixin, UserFilter
-from user.models import User
+from user.admin import UserAdminMixin
 
 # Register your models here.
 from .models import THSRTicket, BookingRequest
