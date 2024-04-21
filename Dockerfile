@@ -10,6 +10,7 @@ RUN mkdir -p logs/ && \
     apt update && \
     apt install -y libpq5 procps cron && \
     pip install -r /requirements/live.txt && \
-    echo "30 */8 * * * python manage.py snap_up_health_check" >> /var/spool/cron/crontabs/root
+    chmod 755 /src/health_check_job.sh && \
+    echo "30 */8 * * * /src/health_check_job.sh" >> /var/spool/cron/crontabs/root
 
 CMD nohup python manage.py continue_snap_up & cron && gunicorn --bind=0.0.0.0:8000 --timeout=300 --keep-alive=60 src.wsgi:application
