@@ -16,14 +16,14 @@ def clear_log(filename: str):
 
 
 LOG_PATH = '/src/logs/django.log'
-MIN_LINES = 100
+MIN_LINES = 500
 
 
 class Command(BaseCommand):
     help = 'Check the health of the application'
 
     def handle(self, *args, **options):
-        if count_lines(LOG_PATH) < MIN_LINES:
+        if count_lines(LOG_PATH) > MIN_LINES:
             clear_log(LOG_PATH)
             log.info('Snap up health check: OK')
             return
