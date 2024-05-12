@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from datetime import time, timedelta as td
+from datetime import time, timedelta as td, date
 
 from basis.db import BasisModel
 from django.db import models
+from django.utils import timezone as tz
 from pydantic import BaseModel, Field, validator
 from user.models import User
 
@@ -10,6 +11,29 @@ from . import utils
 from .constants.bookings import (
     AvailableTime, BookingMethod, PassengerNum, SeatPrefer, Station, TypeOfTrip
 )
+
+
+class HolidayInfo(BasisModel):
+    name = models.CharField(max_length=255, verbose_name='假期名稱')
+    adjust_period = models.CharField(max_length=255, verbose_name='疏運期間')
+    start_reserve_date = models.DateField(verbose_name='開始預約日期')
+
+    @classmethod
+    def get_by_date(cls, date: date) -> 'HolidayInfo':
+        return cls.objects.filter(start_reserve_date=date).first()
+
+    @classmethod
+    def holiday_exist(cls, date: date):
+        return cls.objects.filter(start_reserve_date=date).exists()
+
+    @classmethod
+    def clear_old_infos(cls):
+        one_year_ago = tz.localtime().date() - td(days=365)
+        cls.objects.filter(start_reserve_date__lt=one_year_ago).delete()
+
+    class Meta:
+        verbose_name = '假期疏運資訊'
+        verbose_name_plural = '假期疏運資訊'
 
 
 class THSRTicket(BasisModel):

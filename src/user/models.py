@@ -68,6 +68,7 @@ class User(AbstractBaseUser, PermissionsMixin, BasisModel):
     )
     tgo_account_same_as_personal_id = models.BooleanField(default=True, verbose_name='TGO 帳號與身分證字號相同')
     tgo_account = models.CharField(max_length=255, blank=True, verbose_name='TGO 帳號')
+    remind_holiday = models.BooleanField(default=True, verbose_name='疏運節日訂票提醒')
 
     objects = CustomUserManager()
 
@@ -85,6 +86,10 @@ class User(AbstractBaseUser, PermissionsMixin, BasisModel):
     @classmethod
     def get_by_email(cls, email: str) -> 'User':
         return cls.objects.filter(email=email).first()
+
+    @classmethod
+    def need_remind_list(cls):
+        return cls.objects.filter(remind_holiday=True)
 
     def save(self, *args, **kwargs):
         if self.pk and not self.personal_id:

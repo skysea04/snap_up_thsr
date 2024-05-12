@@ -4,7 +4,7 @@ from basis.admin import ForeignKeyLinksMixin
 from user.admin import UserAdminMixin
 
 # Register your models here.
-from .models import THSRTicket, BookingRequest
+from .models import HolidayInfo, THSRTicket, BookingRequest
 
 
 class ListAdminMixin(ForeignKeyLinksMixin):
@@ -17,6 +17,12 @@ class ListAdminMixin(ForeignKeyLinksMixin):
 #     if has_foreign_key_to(model, User):
 #         admin_class = type('AdminClass', (ListAdminMixin, UserAdminMixin, admin.ModelAdmin), {})
 #     admin.site.register(model, admin_class)
+
+class HolidayInfoAdmin(ListAdminMixin, admin.ModelAdmin):
+    list_filter = ('start_reserve_date',)
+
+
+admin.site.register(HolidayInfo, HolidayInfoAdmin)
 
 
 class THSRTicketAdmin(ListAdminMixin, UserAdminMixin, admin.ModelAdmin):

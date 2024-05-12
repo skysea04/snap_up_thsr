@@ -9,7 +9,7 @@ from bs4.element import Tag
 
 from . import exceptions, utils
 from .constants import urls
-from .constants.bookings import AVAILABLE_DAYS_AFTER_BOOKING, DISCOUNT_MAP, BookingMethod, Station
+from .constants.bookings import DISCOUNT_MAP, BookingMethod, Station
 from .constants.page_htmls import (
     BookingPage, CompleteBookingPage, ConfirmTicketPage, ErrorPage, SelectTrainPage
 )
@@ -196,6 +196,12 @@ class BookingProcessor:
                 raise exceptions.BookingException(err_msg)
 
         return next_page
+
+
+def get_holidays_reservation_start_date():
+    res = requests.get(urls.HOLIDAY_RESERVATION_START_DATE, headers=urls.HEADERS)
+    page = BeautifulSoup(res.content, features='html.parser')
+    return page.find('div', class_='news').text
 
 
 def check_resp_ok(page: Tag) -> Tuple[bool, Optional[str]]:
