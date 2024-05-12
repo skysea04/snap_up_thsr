@@ -97,8 +97,20 @@ class BookingRequest(BasisModel):
         choices=TypeOfTrip.choices, default=TypeOfTrip.ONE_WAY,
         verbose_name='單程/來回', help_text='來回票功能尚未開放，請選擇單程',
     )
+    depart_date = models.DateField(verbose_name='出發日期')
     booking_method = models.PositiveSmallIntegerField(
         choices=BookingMethod.choices, default=BookingMethod.TIME, verbose_name='訂票方式')
+    train_id = models.CharField(max_length=10, blank=True, verbose_name='車次', help_text='若以車次訂票需填寫')
+    earliest_depart_time = models.CharField(
+        max_length=10, blank=True, choices=AvailableTime.choices,
+        default=AvailableTime.NotChosen, verbose_name='最早出發時間',
+        help_text='若以時間訂票需選擇',
+    )
+    latest_arrival_time = models.CharField(
+        max_length=10, blank=True, choices=AvailableTime.choices,
+        default=AvailableTime.NotChosen, verbose_name='最晚抵達時間',
+        help_text='若以時間訂票需選擇',
+    )
     seat_prefer = models.PositiveSmallIntegerField(
         choices=SeatPrefer.choices, default=SeatPrefer.NO_PREFER, verbose_name='座位偏好')
     adult_num = models.PositiveSmallIntegerField(
@@ -111,18 +123,6 @@ class BookingRequest(BasisModel):
         choices=PassengerNum.choices, default=PassengerNum.Zero, verbose_name='敬老票(65+)')
     college_num = models.PositiveSmallIntegerField(
         choices=PassengerNum.choices, default=PassengerNum.Zero, verbose_name='大學生票')
-    depart_date = models.DateField(verbose_name='出發日期')
-    train_id = models.CharField(max_length=10, blank=True, verbose_name='車次', help_text='若以車次訂票需填寫')
-    earliest_depart_time = models.CharField(
-        max_length=10, blank=True, choices=AvailableTime.choices,
-        default=AvailableTime.NotChosen, verbose_name='最早出發時間',
-        help_text='若以時間訂票需選擇',
-    )
-    latest_arrival_time = models.CharField(
-        max_length=10, blank=True, choices=AvailableTime.choices,
-        default=AvailableTime.NotChosen, verbose_name='最晚抵達時間',
-        help_text='若以時間訂票需選擇',
-    )
     passenger_ids = models.JSONField(
         default=list, blank=True, null=True,
         verbose_name='乘客身分證列表(折扣用)', help_text='僅供優惠票實名制使用，若只訂一張票或確定該時段沒有優惠則不須填寫，填寫格式為 ["A123456789", "B123456789"]',
@@ -137,6 +137,14 @@ class BookingRequest(BasisModel):
             latest_booking_date = utils.get_latest_booking_date()
             if latest_booking_date < self.depart_date:
                 self.status = self.Status.NOT_YET
+
+            # handle booking method logic
+            if self.booking_method == BookingMethod.TIME:
+                self.train_id = ''
+
+            elif self.booking_method == BookingMethod.TRAIN_NO:
+                self.earliest_depart_time = AvailableTime.NotChosen
+                self.latest_arrival_time = AvailableTime.NotChosen
 
         super().save(*args, **kwargs)
 

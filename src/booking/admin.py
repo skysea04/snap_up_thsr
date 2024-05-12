@@ -35,5 +35,8 @@ admin.site.register(THSRTicket, THSRTicketAdmin)
 class BookingRequestAdmin(ListAdminMixin, UserAdminMixin, admin.ModelAdmin):
     list_filter = ('status', 'updated_at', 'depart_date')
 
+    class Media:
+        js = ('booking/booking_method_toggle.js',)
+
 
 admin.site.register(BookingRequest, BookingRequestAdmin)

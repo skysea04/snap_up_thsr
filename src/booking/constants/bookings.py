@@ -145,7 +145,7 @@ class Station(models.IntegerChoices):
 
 class TypeOfTrip(models.IntegerChoices):
     ONE_WAY = 0, '單程'
-    ROUND_TRIP = 1, '來回'
+    # ROUND_TRIP = 1, '來回'
 
 
 class BookingMethod(models.IntegerChoices):
