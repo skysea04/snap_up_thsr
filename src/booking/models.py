@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from datetime import time, timedelta as td
+from datetime import time, timedelta as td, date
 
 from basis.db import BasisModel
 from django.db import models
+from django.utils import timezone as tz
 from pydantic import BaseModel, Field, validator
 from user.models import User
 
@@ -10,6 +11,29 @@ from . import utils
 from .constants.bookings import (
     AvailableTime, BookingMethod, PassengerNum, SeatPrefer, Station, TypeOfTrip
 )
+
+
+class HolidayInfo(BasisModel):
+    name = models.CharField(max_length=255, verbose_name='假期名稱')
+    adjust_period = models.CharField(max_length=255, verbose_name='疏運期間')
+    start_reserve_date = models.DateField(verbose_name='開始預約日期')
+
+    @classmethod
+    def get_by_date(cls, date: date) -> 'HolidayInfo':
+        return cls.objects.filter(start_reserve_date=date).first()
+
+    @classmethod
+    def holiday_exist(cls, date: date):
+        return cls.objects.filter(start_reserve_date=date).exists()
+
+    @classmethod
+    def clear_old_infos(cls):
+        one_year_ago = tz.localtime().date() - td(days=365)
+        cls.objects.filter(start_reserve_date__lt=one_year_ago).delete()
+
+    class Meta:
+        verbose_name = '假期疏運資訊'
+        verbose_name_plural = '假期疏運資訊'
 
 
 class THSRTicket(BasisModel):
@@ -73,8 +97,20 @@ class BookingRequest(BasisModel):
         choices=TypeOfTrip.choices, default=TypeOfTrip.ONE_WAY,
         verbose_name='單程/來回', help_text='來回票功能尚未開放，請選擇單程',
     )
+    depart_date = models.DateField(verbose_name='出發日期')
     booking_method = models.PositiveSmallIntegerField(
         choices=BookingMethod.choices, default=BookingMethod.TIME, verbose_name='訂票方式')
+    train_id = models.CharField(max_length=10, blank=True, verbose_name='車次', help_text='若以車次訂票需填寫')
+    earliest_depart_time = models.CharField(
+        max_length=10, blank=True, choices=AvailableTime.choices,
+        default=AvailableTime.NotChosen, verbose_name='最早出發時間',
+        help_text='若以時間訂票需選擇',
+    )
+    latest_arrival_time = models.CharField(
+        max_length=10, blank=True, choices=AvailableTime.choices,
+        default=AvailableTime.NotChosen, verbose_name='最晚抵達時間',
+        help_text='若以時間訂票需選擇',
+    )
     seat_prefer = models.PositiveSmallIntegerField(
         choices=SeatPrefer.choices, default=SeatPrefer.NO_PREFER, verbose_name='座位偏好')
     adult_num = models.PositiveSmallIntegerField(
@@ -87,18 +123,6 @@ class BookingRequest(BasisModel):
         choices=PassengerNum.choices, default=PassengerNum.Zero, verbose_name='敬老票(65+)')
     college_num = models.PositiveSmallIntegerField(
         choices=PassengerNum.choices, default=PassengerNum.Zero, verbose_name='大學生票')
-    depart_date = models.DateField(verbose_name='出發日期')
-    train_id = models.CharField(max_length=10, blank=True, verbose_name='車次', help_text='若以車次訂票需填寫')
-    earliest_depart_time = models.CharField(
-        max_length=10, blank=True, choices=AvailableTime.choices,
-        default=AvailableTime.NotChosen, verbose_name='最早出發時間',
-        help_text='若以時間訂票需選擇',
-    )
-    latest_arrival_time = models.CharField(
-        max_length=10, blank=True, choices=AvailableTime.choices,
-        default=AvailableTime.NotChosen, verbose_name='最晚抵達時間',
-        help_text='若以時間訂票需選擇',
-    )
     passenger_ids = models.JSONField(
         default=list, blank=True, null=True,
         verbose_name='乘客身分證列表(折扣用)', help_text='僅供優惠票實名制使用，若只訂一張票或確定該時段沒有優惠則不須填寫，填寫格式為 ["A123456789", "B123456789"]',
@@ -113,6 +137,14 @@ class BookingRequest(BasisModel):
             latest_booking_date = utils.get_latest_booking_date()
             if latest_booking_date < self.depart_date:
                 self.status = self.Status.NOT_YET
+
+            # handle booking method logic
+            if self.booking_method == BookingMethod.TIME:
+                self.train_id = ''
+
+            elif self.booking_method == BookingMethod.TRAIN_NO:
+                self.earliest_depart_time = AvailableTime.NotChosen
+                self.latest_arrival_time = AvailableTime.NotChosen
 
         super().save(*args, **kwargs)
 

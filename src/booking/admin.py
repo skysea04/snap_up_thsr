@@ -4,7 +4,7 @@ from basis.admin import ForeignKeyLinksMixin
 from user.admin import UserAdminMixin
 
 # Register your models here.
-from .models import THSRTicket, BookingRequest
+from .models import HolidayInfo, THSRTicket, BookingRequest
 
 
 class ListAdminMixin(ForeignKeyLinksMixin):
@@ -18,6 +18,12 @@ class ListAdminMixin(ForeignKeyLinksMixin):
 #         admin_class = type('AdminClass', (ListAdminMixin, UserAdminMixin, admin.ModelAdmin), {})
 #     admin.site.register(model, admin_class)
 
+class HolidayInfoAdmin(ListAdminMixin, admin.ModelAdmin):
+    list_filter = ('start_reserve_date',)
+
+
+admin.site.register(HolidayInfo, HolidayInfoAdmin)
+
 
 class THSRTicketAdmin(ListAdminMixin, UserAdminMixin, admin.ModelAdmin):
     list_filter = ('date', 'created_at')
@@ -28,6 +34,9 @@ admin.site.register(THSRTicket, THSRTicketAdmin)
 
 class BookingRequestAdmin(ListAdminMixin, UserAdminMixin, admin.ModelAdmin):
     list_filter = ('status', 'updated_at', 'depart_date')
+
+    class Media:
+        js = ('booking/booking_method_toggle.js',)
 
 
 admin.site.register(BookingRequest, BookingRequestAdmin)

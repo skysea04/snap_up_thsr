@@ -74,7 +74,8 @@ class UserAdminMixin(admin.ModelAdmin):
 
 class CustomUserAdmin(UserAdmin):
     # Update the list of fields to display in the admin interface.
-    list_display = ('email', 'personal_id', 'phone', 'buy_discount_ticket', 'use_tgo_account')
+    base_list_display = ['email', 'personal_id', 'phone', 'buy_discount_ticket', 'use_tgo_account', 'remind_holiday']
+    list_display = base_list_display
     list_filter = ()
 
     _default_field_set = (
@@ -87,7 +88,7 @@ class CustomUserAdmin(UserAdmin):
     _personal_info_field_set = (
         'Personal info',
         {'fields': ('personal_id', 'phone', 'buy_discount_ticket', 'use_tgo_account',
-                    'tgo_account_same_as_personal_id', 'tgo_account')}
+                    'tgo_account_same_as_personal_id', 'tgo_account', 'remind_holiday')}
     )
 
     fieldsets = (
@@ -99,9 +100,9 @@ class CustomUserAdmin(UserAdmin):
 
     def get_list_display(self, request):
         if request.user.is_superuser:
-            return ('email', 'personal_id', 'phone', 'buy_discount_ticket', 'use_tgo_account', 'is_superuser')
+            return self.base_list_display + ['is_superuser']
         else:
-            return ('email', 'personal_id', 'phone', 'buy_discount_ticket', 'use_tgo_account')
+            return self.base_list_display
 
     def get_fieldsets(self, request, obj=None):
         if not obj:
