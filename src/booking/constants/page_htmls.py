@@ -88,3 +88,6 @@ class ErrorPage:
 
     def server_busy(tag):
         return tag.name == 'p' and '系統忙碌中，請耐心等候，並請勿使用「重新整理」鍵或離開本頁面。' in tag.text
+
+    def in_maintenance(tag):
+        return tag.name == 'h1' and tag.text.strip() == '網路訂票系統暫停服務中'
