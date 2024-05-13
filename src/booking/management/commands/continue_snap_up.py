@@ -1,10 +1,9 @@
 import logging
 import signal
 import traceback
-from datetime import time
+from datetime import time, timedelta as td
 from time import sleep
 
-from basis.conf import CURRENT_TZ
 from basis.constants import Time
 from basis.logger import log
 from booking import tasks
@@ -30,22 +29,23 @@ signal.signal(signal.SIGTERM, sigterm_handler)
 
 
 def switch_requests_status():
-    now = tz.now().astimezone(CURRENT_TZ)
+    now = tz.localtime()
     if now.time() < time(0, 3):
         tasks.update_not_yet_requests_to_pending()
 
 
-def take_a_break(all_success: bool):
-    now = tz.now().astimezone(CURRENT_TZ)
-    now_time = now.time()
-    if now_time < time(23, 59):
+def take_a_break(all_success: bool, in_maintenance: bool):
+    now = tz.localtime()
+    next_day = now.replace(hour=0, minute=0, second=0) + td(days=1)
+    time_diff = (next_day - now).seconds
+
+    if in_maintenance:
+        sleep(min(time_diff, Time.TEN_MINUTES))
+    else:
         if all_success:
-            sleep(Time.ONE_MINUTE)
+            sleep(min(Time.ONE_MINUTE, time_diff))
         else:
             sleep(Time.FIFTEEN_SECONDS)
-    else:
-        time_diff = Time.ONE_MINUTE - now_time.second
-        sleep(time_diff)
 
 
 class Command(BaseCommand):
@@ -54,10 +54,10 @@ class Command(BaseCommand):
             try:
                 log.info('Start snap up')
                 switch_requests_status()
-                all_success = tasks.book_all_pending_reqests()
+                all_success, in_maintenance = tasks.book_all_pending_reqests()
                 tasks.expire_pending_requests()
                 log.info('Snap up fininshed, take a break')
-                take_a_break(all_success)
+                take_a_break(all_success, in_maintenance)
 
             except Exception as e:
                 log.error(e)

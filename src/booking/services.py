@@ -205,6 +205,10 @@ def get_holidays_reservation_start_date():
 
 
 def check_resp_ok(page: Tag) -> Tuple[bool, Optional[str]]:
+    maintenance_tag = page.find(ErrorPage.in_maintenance)
+    if maintenance_tag:
+        return False, '高鐵系統維護中'
+
     feedback_tag = page.find(**ErrorPage.ERROR_FEEDBACK)
     if feedback_tag:
         return False, feedback_tag.find('span').text

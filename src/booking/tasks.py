@@ -1,3 +1,5 @@
+import traceback
+from typing import Tuple
 from datetime import datetime as dt, timedelta as td
 
 from basis.conf import CURRENT_TZ
@@ -130,9 +132,10 @@ def expire_pending_requests():
                 request.save()
 
 
-def book_all_pending_reqests() -> bool:
+def book_all_pending_reqests() -> Tuple[bool, bool]:
     pending_requests = BookingRequest.get_all_by_status(BookingRequest.Status.PENDING)
     counter = 0
+    in_maintenance = False
     for request in pending_requests:
         try:
             booking_task(request)
@@ -141,9 +144,13 @@ def book_all_pending_reqests() -> bool:
             log.error(e)
             request.error_msg = str(e)
             request.save()
+            if e.__str__() == '高鐵系統維護中':
+                in_maintenance = True
+
         except Exception as e:
             log.error(e)
+            log.error(traceback.format_exc())
             request.error_msg = str(e)
             request.save()
 
-    return counter == len(pending_requests)
+    return counter == len(pending_requests), in_maintenance
