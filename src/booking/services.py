@@ -29,7 +29,7 @@ class THSRSession(requests.Session):
             urls.BASIC.format(path=path),
             headers=urls.HEADERS,
             params=form_data,
-            allow_redirects=True
+            allow_redirects=True,
         )
         return BeautifulSoup(res.content, features='html.parser')
 
