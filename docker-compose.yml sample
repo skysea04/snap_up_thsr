@@ -40,7 +40,7 @@ services:
       - ./requirements:/requirements
     # ports:
       # - "8686:8000"
-    command: bash -c "pip freeze > /requirements/live.txt && tail -f /dev/null"
+    command: bash -c "printenv > /etc/environment && pip freeze > /requirements/live.txt && tail -f /dev/null"
     environment:
       DEPLOY: dev
       DJANGO_SECRET_KEY: dev
