@@ -30,7 +30,6 @@ jobs:
       run: |
         docker build -t arcade0425/snap_up_thsr:latest .
         docker push arcade0425/snap_up_thsr:latest
-      # if: steps.changes.outputs.matched == 'true'
 
     - name: Build and push nginx image
       run: |
