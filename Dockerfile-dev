@@ -8,6 +8,7 @@ ADD requirements/local.txt /tmp/
 
 RUN mkdir -p logs/ && \
     apt update && \
-    apt install -y libpq5 procps && \
+    apt install -y libpq5 procps cron vim && \
     pip install -r /tmp/local.txt && \
     rm -r /tmp/local.txt
+    # (crontab -l 2>/dev/null; echo "* * * * * /src/jobs/health_check.sh >> /src/logs/cron.log 2>&1") | crontab -
