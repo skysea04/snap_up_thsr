@@ -1,6 +1,9 @@
+from django.contrib import admin, messages
 from django.db.models import Field, Model
 from django.urls import reverse
 from django.utils.html import format_html
+
+from .models import SystemMessage
 
 
 class ForeignKeyLinksMixin:
@@ -30,3 +33,40 @@ class ForeignKeyLinksMixin:
         link_func.short_description = field.verbose_name
         link_func.allow_tags = True
         return link_func
+
+
+class ListAdminMixin(ForeignKeyLinksMixin):
+    def __init__(self, model, admin_site):
+        self.list_display = [field.name for field in model._meta.fields]
+        super(ListAdminMixin, self).__init__(model, admin_site)
+
+
+class BaseAdmin(admin.ModelAdmin):
+    def changelist_view(self, request, extra_context=None):
+        sys_msg = SystemMessage.get_active()
+        if sys_msg:
+            messages.add_message(request, sys_msg.level, sys_msg.content)
+
+        return super().changelist_view(request, extra_context)
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        sys_msg = SystemMessage.get_active()
+        if sys_msg:
+            messages.add_message(request, sys_msg.level, sys_msg.content)
+
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    def add_view(self, request, form_url='', extra_context=None):
+        sys_msg = SystemMessage.get_active()
+        if sys_msg:
+            messages.add_message(request, sys_msg.level, sys_msg.content)
+
+        return super().add_view(request, form_url, extra_context)
+
+
+# register models
+class SystemMessageAdmin(ListAdminMixin, BaseAdmin):
+    pass
+
+
+admin.site.register(SystemMessage, SystemMessageAdmin)

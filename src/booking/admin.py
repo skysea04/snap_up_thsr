@@ -1,16 +1,9 @@
+from basis.admin import BaseAdmin, ListAdminMixin
 from django.contrib import admin
-
-from basis.admin import ForeignKeyLinksMixin
 from user.admin import UserAdminMixin
 
 # Register your models here.
-from .models import HolidayInfo, THSRTicket, BookingRequest
-
-
-class ListAdminMixin(ForeignKeyLinksMixin):
-    def __init__(self, model, admin_site):
-        super(ListAdminMixin, self).__init__(model, admin_site)
-
+from .models import BookingRequest, HolidayInfo, THSRTicket
 
 # for model in find_all_models(booking_models):
 #     admin_class = type('AdminClass', (ListAdminMixin, admin.ModelAdmin), {})
@@ -18,21 +11,22 @@ class ListAdminMixin(ForeignKeyLinksMixin):
 #         admin_class = type('AdminClass', (ListAdminMixin, UserAdminMixin, admin.ModelAdmin), {})
 #     admin.site.register(model, admin_class)
 
-class HolidayInfoAdmin(ListAdminMixin, admin.ModelAdmin):
+
+class HolidayInfoAdmin(ListAdminMixin, BaseAdmin):
     list_filter = ('start_reserve_date',)
 
 
 admin.site.register(HolidayInfo, HolidayInfoAdmin)
 
 
-class THSRTicketAdmin(ListAdminMixin, UserAdminMixin, admin.ModelAdmin):
+class THSRTicketAdmin(ListAdminMixin, UserAdminMixin, BaseAdmin):
     list_filter = ('date', 'created_at')
 
 
 admin.site.register(THSRTicket, THSRTicketAdmin)
 
 
-class BookingRequestAdmin(ListAdminMixin, UserAdminMixin, admin.ModelAdmin):
+class BookingRequestAdmin(ListAdminMixin, UserAdminMixin, BaseAdmin):
     list_filter = ('status', 'updated_at', 'depart_date')
 
     class Media:
