@@ -225,4 +225,8 @@ def check_resp_ok(page: Tag) -> Tuple[bool, Optional[str]]:
     if error_content:
         return False, error_content.find('p').text
 
+    reach_limit = page.find(**ErrorPage.ERROR_REACH_LIMIT)
+    if reach_limit:
+        return False, reach_limit
+
     return True, None

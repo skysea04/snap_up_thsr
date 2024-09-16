@@ -82,7 +82,7 @@ class ErrorPage:
     ERROR_FEEDBACK = {'class': 'feedbackPanelERROR'}
     ERROR_MESSAGE = {'text': '抱歉，無法繼續提供您訂票的服務，可能發生原因及解決方法如下：'}
     ERROR_CONTENT = {'class': 'error-content'}
-
+    ERROR_REACH_LIMIT = {'text': '線上使用者已達系統上限'}
     ERROR_SECURITY_CODE = '檢測碼輸入錯誤，請確認後重新輸入，謝謝！'
     ERROR_NO_TRAIN = '去程查無可售車次或選購的車票已售完，請重新輸入訂票條件。'
 
