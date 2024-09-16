@@ -1,6 +1,7 @@
 import traceback
 import uuid
 
+from basis.admin import BaseAdmin, ListAdminMixin
 from basis.logger import log
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
@@ -12,13 +13,7 @@ from user.models import InviteCode
 from .models import InviteCode, User
 
 
-class ListAdminMixin:
-    def __init__(self, model, admin_site):
-        self.list_display = [field.name for field in model._meta.fields]
-        super(ListAdminMixin, self).__init__(model, admin_site)
-
-
-class InviteCodeAdmin(ListAdminMixin, admin.ModelAdmin):
+class InviteCodeAdmin(ListAdminMixin, BaseAdmin):
     change_list_template = 'admin/invitecode_change_list.html'
 
     def get_urls(self):
@@ -45,7 +40,7 @@ class InviteCodeAdmin(ListAdminMixin, admin.ModelAdmin):
 admin.site.register(InviteCode, InviteCodeAdmin)
 
 
-class UserAdminMixin(admin.ModelAdmin):
+class UserAdminMixin(BaseAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.related_model == User and not request.user.is_superuser:
             kwargs['queryset'] = User.objects.filter(email=request.user.email)
@@ -72,7 +67,7 @@ class UserAdminMixin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-class CustomUserAdmin(UserAdmin):
+class CustomUserAdmin(UserAdmin, BaseAdmin):
     # Update the list of fields to display in the admin interface.
     base_list_display = ['email', 'personal_id', 'phone', 'buy_discount_ticket', 'use_tgo_account', 'remind_holiday']
     list_display = base_list_display
