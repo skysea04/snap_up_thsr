@@ -1,6 +1,6 @@
 import traceback
-from typing import Tuple
 from datetime import datetime as dt, timedelta as td
+from typing import Tuple
 
 from basis.conf import CURRENT_TZ
 from basis.logger import log
