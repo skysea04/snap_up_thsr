@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import time, timedelta as td, date
+from datetime import date, time, timedelta as td
 
 from basis.db import BasisModel
 from django.db import models
@@ -127,7 +127,7 @@ class BookingRequest(BasisModel):
         default=list, blank=True, null=True,
         verbose_name='乘客身分證列表(折扣用)', help_text='僅供優惠票實名制使用，若只訂一張票或確定該時段沒有優惠則不須填寫，填寫格式為 ["A123456789", "B123456789"]',
     )
-    error_msg = models.CharField(max_length=255, blank=True, editable=False, verbose_name='錯誤訊息(前一輪訂票失敗原因)')
+    error_msg = models.CharField(max_length=512, blank=True, editable=False, verbose_name='錯誤訊息(前一輪訂票失敗原因)')
 
     def total_ticket_amount(self) -> int:
         return sum([self.adult_num, self.child_num, self.disabled_num, self.elder_num, self.college_num])

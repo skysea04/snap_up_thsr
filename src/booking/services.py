@@ -24,7 +24,7 @@ class THSRSession(requests.Session):
         if proxy:
             self.proxies = {
                 'http': f'http://{proxy.ip}:{proxy.port}',
-                'https': f'https://{proxy.ip}:{proxy.port}',
+                'https': f'http://{proxy.ip}:{proxy.port}',
             }
 
     def get_booking_page(self) -> Tag:
