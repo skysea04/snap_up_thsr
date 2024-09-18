@@ -3,7 +3,7 @@ from django.db.models import Field, Model
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import SystemMessage
+from .models import ProxyServer, SystemMessage
 
 
 class ForeignKeyLinksMixin:
@@ -70,3 +70,10 @@ class SystemMessageAdmin(ListAdminMixin, BaseAdmin):
 
 
 admin.site.register(SystemMessage, SystemMessageAdmin)
+
+
+class ProxyServerAdmin(ListAdminMixin, BaseAdmin):
+    pass
+
+
+admin.site.register(ProxyServer, ProxyServerAdmin)
