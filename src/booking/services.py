@@ -3,6 +3,7 @@ from datetime import datetime as dt, timedelta as td
 from typing import Dict, List, Optional, Tuple, Union
 
 import requests
+from basis.utils import get_active_proxy
 from booking.constants.bookings import AvailableTime
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -17,6 +18,15 @@ from .models import BookingForm, BookingRequest, THSRTicket, Train
 
 
 class THSRSession(requests.Session):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        proxy = get_active_proxy()
+        if proxy:
+            self.proxies = {
+                'http': f'http://{proxy.ip}:{proxy.port}',
+                'https': f'https://{proxy.ip}:{proxy.port}',
+            }
+
     def get_booking_page(self) -> Tag:
         res = self.get(urls.BOOKING_PAGE, headers=urls.HEADERS, allow_redirects=True)
         return BeautifulSoup(res.content, features='html.parser')
@@ -196,12 +206,6 @@ class BookingProcessor:
                 raise exceptions.BookingException(err_msg)
 
         return next_page
-
-
-def get_holidays_reservation_start_date():
-    res = requests.get(urls.HOLIDAY_RESERVATION_START_DATE, headers=urls.HEADERS)
-    page = BeautifulSoup(res.content, features='html.parser')
-    return page.find('div', class_='news').text
 
 
 def check_resp_ok(page: Tag) -> Tuple[bool, Optional[str]]:

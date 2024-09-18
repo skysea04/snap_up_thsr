@@ -1,14 +1,13 @@
-from datetime import datetime
 import logging
 import re
+from datetime import datetime
+
 import requests
-
-from bs4 import BeautifulSoup, Tag
-from django.core.management.base import BaseCommand
-
 from basis.logger import log
 from booking.models import HolidayInfo
-
+from booking.services import THSRSession
+from bs4 import BeautifulSoup, Tag
+from django.core.management.base import BaseCommand
 
 INFO_URL = 'https://www.thsrc.com.tw/ArticleContent/60dbfb79-ac20-4280-8ffb-b09e7c94f043'
 
@@ -20,7 +19,7 @@ class Command(BaseCommand):
         try:
             HolidayInfo.clear_old_infos()
 
-            resp = requests.get(INFO_URL)
+            resp = THSRSession().get(INFO_URL)
             page = BeautifulSoup(resp.text, 'html.parser')
             holiday_info_rows: list[Tag] = (
                 page.find('div', {'class': 'news'})
