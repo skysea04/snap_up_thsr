@@ -2,7 +2,6 @@ import logging
 import re
 from datetime import datetime
 
-import requests
 from basis.logger import log
 from booking.models import HolidayInfo
 from booking.services import THSRSession
@@ -21,12 +20,12 @@ class Command(BaseCommand):
 
             resp = THSRSession().get(INFO_URL)
             page = BeautifulSoup(resp.text, 'html.parser')
-            holiday_info_rows: list[Tag] = (
-                page.find('div', {'class': 'news'})
-                .find('table', {'class': 'table'})
-                .find_all('tr')
-            )
-
+            holiday_years: list[Tag] = page.find_all('div', {'class': 'news'})
+            holiday_info_rows: list[Tag] = [
+                row
+                for year in holiday_years
+                for row in year.find('table', {'class': 'table'}).find_all('tr')
+            ]
             for row in holiday_info_rows:
                 cols: list[Tag] = row.find_all('td')
 
