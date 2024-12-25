@@ -8,7 +8,7 @@ ADD requirements /requirements
 
 RUN mkdir -p logs/ && \
     apt update && \
-    apt install -y libpq5 procps cron && \
+    apt install -y libpq5 procps cron vim && \
     pip install -r /requirements/live.txt && \
     chmod -R 755 /src/jobs/ && \
     (crontab -l 2>/dev/null; echo "30 */8 * * * /src/jobs/health_check.sh >> /src/logs/cron.log 2>&1") | crontab - && \
