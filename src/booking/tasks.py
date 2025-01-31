@@ -6,6 +6,7 @@ from typing import Tuple
 from django.db import transaction
 from django.utils import timezone as tz
 from pydantic import create_model
+from requests.exceptions import Timeout
 
 from basis.conf import CURRENT_TZ
 from basis.logger import log
@@ -149,7 +150,7 @@ def expire_pending_requests():
                 request.save()
 
 
-def book_all_pending_reqests() -> Tuple[bool, bool]:
+def book_all_pending_requests() -> Tuple[bool, bool]:
     pending_requests = BookingRequest.get_all_by_status(BookingRequest.Status.PENDING)
     counter = 0
     in_maintenance = False
@@ -157,6 +158,12 @@ def book_all_pending_reqests() -> Tuple[bool, bool]:
         try:
             booking_task(request)
             counter += 1
+
+        except Timeout as e:
+            log.error(e)
+            request.error_msg = "連線逾時"
+            request.save()
+
         except BookingException as e:
             log.error(e)
             request.error_msg = str(e)

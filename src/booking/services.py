@@ -35,12 +35,12 @@ class THSRSession(requests.Session):
 
     def get_booking_page(self) -> Tag:
         res = self.get(
-            urls.BOOKING_PAGE, headers=urls.HEADERS, allow_redirects=True, timeout=10
+            urls.BOOKING_PAGE, headers=urls.HEADERS, allow_redirects=True, timeout=5
         )
         return BeautifulSoup(res.content, features="html.parser")
 
     def get_security_img(self, img_url: str) -> bytes:
-        return self.get(img_url, headers=urls.HEADERS, timeout=10).content
+        return self.get(img_url, headers=urls.HEADERS, timeout=5).content
 
     def submit_booking_condition(self, path: str, form_data: Dict) -> Tag:
         res = self.post(
@@ -48,7 +48,7 @@ class THSRSession(requests.Session):
             headers=urls.HEADERS,
             params=form_data,
             allow_redirects=True,
-            timeout=10,
+            timeout=5,
         )
         return BeautifulSoup(res.content, features="html.parser")
 
@@ -58,7 +58,7 @@ class THSRSession(requests.Session):
             headers=urls.HEADERS,
             params=form_data,
             allow_redirects=True,
-            timeout=10,
+            timeout=5,
         )
         return BeautifulSoup(res.content, features="html.parser")
 
@@ -68,7 +68,7 @@ class THSRSession(requests.Session):
             headers=urls.HEADERS,
             params=form_data,
             allow_redirects=True,
-            timeout=10,
+            timeout=5,
         )
         return BeautifulSoup(res.content, features="html.parser")
 

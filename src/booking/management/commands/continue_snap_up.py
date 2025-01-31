@@ -1,15 +1,17 @@
 import logging
 import signal
 import traceback
-from datetime import time, timedelta as td
+from datetime import time
+from datetime import timedelta as td
 from time import sleep
+
+from django.conf import settings
+from django.core.management.base import BaseCommand
+from django.utils import timezone as tz
 
 from basis.constants import Time
 from basis.logger import log
 from booking import tasks
-from django.conf import settings
-from django.core.management.base import BaseCommand
-from django.utils import timezone as tz
 
 if settings.DEV_MODE:
     log.addHandler(logging.StreamHandler())
@@ -21,7 +23,7 @@ class SignalMark:
 
 
 def sigterm_handler(*args):  # ignore signum and frame
-    log.info('SIGTERM received, cleanup!!!')
+    log.info("SIGTERM received, cleanup!!!")
     SignalMark.cleanup = True
 
 
@@ -52,11 +54,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         while not SignalMark.cleanup:
             try:
-                log.info('Start snap up')
+                log.info("Start snap up")
                 switch_requests_status()
-                all_success, in_maintenance = tasks.book_all_pending_reqests()
+                all_success, in_maintenance = tasks.book_all_pending_requests()
                 tasks.expire_pending_requests()
-                log.info('Snap up fininshed, take a break')
+                log.info("Snap up finished, take a break")
                 take_a_break(all_success, in_maintenance)
 
             except Exception as e:
