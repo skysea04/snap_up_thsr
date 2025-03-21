@@ -1,24 +1,18 @@
 import time
-from datetime import datetime as dt
-from datetime import timedelta as td
+from datetime import datetime as dt, timedelta as td
 from typing import Dict, List, Optional, Tuple, Union
 
 import requests
-from bs4 import BeautifulSoup
-from bs4.element import Tag
-
 from basis.utils import get_active_proxy
 from booking.constants.bookings import AvailableTime
+from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 from . import exceptions, utils
 from .constants import urls
 from .constants.bookings import DISCOUNT_MAP, BookingMethod, Station
 from .constants.page_htmls import (
-    BookingPage,
-    CompleteBookingPage,
-    ConfirmTicketPage,
-    ErrorPage,
-    SelectTrainPage,
+    BookingPage, CompleteBookingPage, ConfirmTicketPage, ErrorPage, SelectTrainPage
 )
 from .models import BookingForm, BookingRequest, THSRTicket, Train
 
@@ -134,7 +128,7 @@ class PageParser:
             str_arrival_time = train_elem.find("input").get(
                 SelectTrainPage.ARRIVAL_TIME
             )
-            if str_arrival_time.startswith("00"):  # next day
+            if str_arrival_time.startswith("00") or str_arrival_time.startswith("01"):  # next day
                 continue
 
             if str_arrival_time > AvailableTime.get_label_name(
