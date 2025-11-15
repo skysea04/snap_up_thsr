@@ -147,7 +147,7 @@ def expire_pending_requests():
                 request.save()
 
         else:  # Train No
-            if (now + td(days=1)).date() >= request.depart_date:
+            if now.date() > request.depart_date:
                 request.status = BookingRequest.Status.EXPIRED
                 request.save()
 
