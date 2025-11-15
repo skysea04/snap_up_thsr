@@ -7,7 +7,7 @@ redis
 phonenumbers
 requests
 beautifulsoup4
-ddddocr
+ddddocr==1.5.5
 
 # live
 gunicorn
