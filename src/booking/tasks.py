@@ -1,6 +1,8 @@
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime as dt
 from datetime import timedelta as td
+from threading import Lock
 from typing import Tuple
 
 from django.db import transaction
@@ -152,29 +154,54 @@ def expire_pending_requests():
 
 def book_all_pending_requests() -> Tuple[bool, bool]:
     pending_requests = BookingRequest.get_all_by_status(BookingRequest.Status.PENDING)
+    if not pending_requests:
+        return True, False
+
     counter = 0
     in_maintenance = False
-    for request in pending_requests:
+    counter_lock = Lock()
+    maintenance_lock = Lock()
+
+    def process_request(request: BookingRequest) -> bool:
+        """處理單個預訂請求，返回是否成功"""
+        nonlocal counter, in_maintenance
         try:
             booking_task(request)
-            counter += 1
+            with counter_lock:
+                counter += 1
+            return True
 
         except Timeout as e:
             log.error(e)
             request.error_msg = "連線逾時"
             request.save()
+            return False
 
         except BookingException as e:
             log.error(e)
             request.error_msg = str(e)
             request.save()
-            if e.__str__() == "高鐵系統維護中":
-                in_maintenance = True
+            if str(e) == "高鐵系統維護中":
+                with maintenance_lock:
+                    in_maintenance = True
+            return False
 
         except Exception as e:
             log.error(e)
             log.error(traceback.format_exc())
             request.error_msg = str(e)
             request.save()
+            return False
+
+    # 使用 ThreadPoolExecutor 並行處理請求
+    # max_workers 設為 None 會使用預設值（通常是 CPU 核心數 * 5）
+    with ThreadPoolExecutor(max_workers=None) as executor:
+        futures = {executor.submit(process_request, request): request for request in pending_requests}
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                log.error(f"處理請求時發生未預期的錯誤: {e}")
+                log.error(traceback.format_exc())
 
     return counter == len(pending_requests), in_maintenance
