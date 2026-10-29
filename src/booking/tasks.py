@@ -5,10 +5,10 @@ from datetime import timedelta as td
 from threading import Lock
 from typing import Tuple
 
+from curl_cffi.requests.exceptions import Timeout
 from django.db import transaction
 from django.utils import timezone as tz
 from pydantic import create_model
-from requests.exceptions import Timeout
 
 from basis.conf import CURRENT_TZ
 from basis.logger import log
