@@ -29,6 +29,12 @@ class THSRSession(requests.Session):
                 "https": f"http://{proxy.ip}:{proxy.port}",
             }
 
+    def request(self, method, url, params=None, **kwargs):
+        # curl_cffi sends None as the string 'None'; python-requests used to drop these fields
+        if isinstance(params, dict):
+            params = {k: v for k, v in params.items() if v is not None}
+        return super().request(method, url, params=params, **kwargs)
+
     def get_booking_page(self) -> Tag:
         res = self.get(
             urls.BOOKING_PAGE, headers=urls.HEADERS, allow_redirects=True, timeout=5
